@@ -3,7 +3,7 @@ import { Form, Button } from 'react-bootstrap'
 export default function Contact() {
     return (
         <div>
-            <h1>📞 Kontakt os</h1>
+            <h1>Kontakt os</h1>
             <Form className="mt-3" style={{ maxWidth: 400 }}>
                 <Form.Group className="mb-3">
                     <Form.Label>Navn</Form.Label>

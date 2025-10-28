@@ -8,7 +8,7 @@ import Contact from './pages/Contact'
 function App() {
     return (
         <>
-            {/* 🔹 Navigation med React Bootstrap */}
+            {/* Navigation med React Bootstrap */}
             <Navbar bg="dark" variant="dark" expand="lg">
                 <Container>
                     <Navbar.Brand as={Link} to="/">Min App</Navbar.Brand>
@@ -20,7 +20,7 @@ function App() {
                 </Container>
             </Navbar>
 
-            {/* 🔹 Indholdsruter */}
+            {/* Indholdsruter */}
             <Container className="mt-4">
                 <Routes>
                     <Route path="/" element={<Home />} />
