@@ -11,7 +11,7 @@ const toLocalYMD = (d) => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.get
 // run a function after layout has painted (reliable for refs/position)
 const afterPaint = (fn) => requestAnimationFrame(() => requestAnimationFrame(fn));
 
-export const ContinuousCalendar = ({ onClick, onCreate, onEventClick, events = [] }) => {
+export const ContinuousCalendar = ({ onClick, onCreate, onEventClick, onDelete, events = [] }) => {
   const today = new Date();
   const dayRefs = useRef([]);
   const containerRef = useRef(null);
@@ -179,6 +179,13 @@ export const ContinuousCalendar = ({ onClick, onCreate, onEventClick, events = [
   };
   const closeDetails = () => setSelectedEvent(null);
 
+  const handleDeleteClick = (eventObj) => {
+    if (onDelete) {
+      onDelete(eventObj.id); // Kald parent-funktionen, der sletter fra localStorage
+      closeDetails();         // Luk detalje-modalen, da eventet er væk
+    }
+  };
+  
   // ---------- calendar build ----------
   const generateCalendar = useMemo(() => {
     dayRefs.current = [];
@@ -519,8 +526,16 @@ export const ContinuousCalendar = ({ onClick, onCreate, onEventClick, events = [
               </div>
             )}
 
-            <div className="d-flex justify-content-end gap-2 mt-4">
-              <button type="button" className="btn btn-outline-secondary" onClick={closeDetails}>Close</button>
+          <div className="d-flex justify-content-between mt-4">
+            <button 
+            type="button" 
+              className="btn btn-danger" 
+                onClick={() => handleDeleteClick(selectedEvent)}>
+              Delete Event
+              </button>
+              <div className="d-flex gap-2">
+                <button type="button" className="btn btn-outline-secondary" onClick={closeDetails}>Close</button>
+              </div>
             </div>
           </div>
         </div>

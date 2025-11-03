@@ -28,6 +28,15 @@ export function addEvent(evt) {
   return list;
 }
 
+// ** NY FUNKTION: Slet en event baseret på ID **
+export function deleteEvent(id) {
+  const list = read();
+  // Filtrér listen og behold kun events, hvis ID IKKE matcher det givne ID
+  const updatedList = list.filter(e => e.id !== id);
+  write(updatedList);
+  return updatedList;
+}
+
 export function clearEvents() {
   write([]);
 }
