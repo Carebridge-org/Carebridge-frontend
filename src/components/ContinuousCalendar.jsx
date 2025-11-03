@@ -19,6 +19,7 @@ export const ContinuousCalendar = ({ onClick, onCreate, onEventClick, onDelete, 
   const [year, setYear] = useState(today.getFullYear());
   const [selectedMonth, setSelectedMonth] = useState(today.getMonth());
   const [selectedEvent, setSelectedEvent] = useState(null);
+  const [editingEvent, setEditingEvent] = useState(null);
 
   // ---------- Create-Event form ----------
   const [showForm, setShowForm] = useState(false);
@@ -66,10 +67,34 @@ export const ContinuousCalendar = ({ onClick, onCreate, onEventClick, onDelete, 
   }, [events]);
 
   // ---------- single entry point to open the modal ----------
-  const openNewEvent = useCallback((dateObj) => {
-    const localYMD = toLocalYMD(dateObj);
-    setFormData((p) => ({ ...p, date: localYMD }));
+const openForm = useCallback((eventToEdit = null, dateObj = null) => {
     setFormErrors({});
+    setEditingEvent(eventToEdit); // Gem eventet, hvis vi er i redigeringstilstand
+
+    if (eventToEdit) {
+      // Redigering: Udfyld formularen med eksisterende data
+      setFormData({
+        id: eventToEdit.id,     // VIGTIGT: Husk ID'et
+        title: eventToEdit.title,
+        description: eventToEdit.description,
+        date: eventToEdit.date.slice(0, 10), // Sikkerhed for format
+        time: eventToEdit.time || '',
+        type: eventToEdit.type,
+        showOnBoard: !!eventToEdit.showOnBoard,
+      });
+    } else {
+      // Oprettelse: Nulstil formularen
+      const initialDate = dateObj ? toLocalYMD(dateObj) : toLocalYMD(new Date());
+      setFormData(() => ({ 
+        id: null, 
+        title: '', 
+        description: '', 
+        date: initialDate, 
+        time: '', 
+        type: 'Meeting', 
+        showOnBoard: true 
+      }));
+    }
     setShowForm(true);
   }, []);
 
@@ -82,7 +107,7 @@ export const ContinuousCalendar = ({ onClick, onCreate, onEventClick, onDelete, 
     return Object.keys(e).length === 0;
   };
 
-  const handleSubmit = (ev) => {
+const handleSubmit = (ev) => {
     ev.preventDefault();
     if (!validate()) return;
 
@@ -93,22 +118,26 @@ export const ContinuousCalendar = ({ onClick, onCreate, onEventClick, onDelete, 
       out.setHours(hh || 0, mi || 0, 0, 0);
     }
 
+    // Tjek om vi er i redigeringstilstand. Brug eksisterende ID eller lav nyt.
+    const eventId = editingEvent ? editingEvent.id : `${Date.now()}`;
+    
     const payload = {
-      id: `${Date.now()}`,
+      id: eventId, 
       title: formData.title.trim(),
       description: formData.description?.trim() || '',
-      date: formData.date,       // YYYY-MM-DD
-      time: formData.time || '', // HH:MM
+      date: formData.date,       
+      time: formData.time || '', 
       datetime: out.toISOString(),
       type: formData.type,
       showOnBoard: !!formData.showOnBoard,
-      createdAt: new Date().toISOString(),
+      createdAt: editingEvent ? editingEvent.createdAt : new Date().toISOString(), // Bevar oprettelsesdato
     };
 
-    if (onCreate) onCreate(payload); // parent persists & refreshes
+    if (onCreate) onCreate(payload); // Oprettet/Opdateret eventet
 
     setShowForm(false);
-    setFormData((p) => ({ ...p, title: '', description: '', time: '', showOnBoard: true }));
+    setEditingEvent(null); // Nulstil state efter gem
+    setFormData((p) => ({ ...p, id: null, title: '', description: '', time: '', showOnBoard: true }));
   };
 
   // ---------- scrolling helpers ----------
@@ -162,14 +191,14 @@ export const ContinuousCalendar = ({ onClick, onCreate, onEventClick, onDelete, 
     else onClick(day, month, yy);
   };
 
-  const handleAddEventButton = () => openNewEvent(new Date());
+  const handleAddEventButton = () => openForm(null, new Date());
 
   const handleInlineAddClick = (e, day, month, yy) => {
     e.preventDefault();
     e.stopPropagation();
     const m = month < 0 ? 11 : month;  // handle leading filler days
     const y = month < 0 ? yy - 1 : yy;
-    openNewEvent(new Date(y, m, day));
+    openForm(null, new Date(y, m, day));
   };
 
   const handleEventOpen = (eObj, e) => {
@@ -387,7 +416,9 @@ export const ContinuousCalendar = ({ onClick, onCreate, onEventClick, onDelete, 
           <div className="bg-white rounded-4 shadow p-3 p-sm-4" style={{ width: 'min(640px, 92vw)' }}
                role="dialog" aria-modal="true" aria-labelledby="newEventTitle">
             <div className="d-flex align-items-center justify-content-between mb-3">
-              <h2 id="newEventTitle" className="h5 mb-0">Create New Event</h2>
+              <h2 id="newEventTitle" className="h5 mb-0">
+                {editingEvent ? 'Edit Event' : 'Create New Event'} 
+              </h2>
               <button className="btn btn-light" onClick={() => setShowForm(false)} aria-label="Close">✕</button>
             </div>
 
@@ -466,7 +497,9 @@ export const ContinuousCalendar = ({ onClick, onCreate, onEventClick, onDelete, 
 
               <div className="d-flex justify-content-end gap-2 mt-4">
                 <button type="button" className="btn btn-outline-secondary" onClick={() => setShowForm(false)}>Cancel</button>
-                <button type="submit" className="btn btn-primary">Create Event</button>
+                <button type="submit" className="btn btn-primary">
+                  {editingEvent ? 'Save Changes' : 'Create Event'}
+                </button>
               </div>
             </form>
           </div>
@@ -526,14 +559,24 @@ export const ContinuousCalendar = ({ onClick, onCreate, onEventClick, onDelete, 
               </div>
             )}
 
-          <div className="d-flex justify-content-between mt-4">
-            <button 
-            type="button" 
-              className="btn btn-danger" 
+<div className="d-flex justify-content-between mt-4">
+              <button 
+                type="button" 
+                className="btn btn-danger" 
                 onClick={() => handleDeleteClick(selectedEvent)}>
-              Delete Event
+                Delete Event
               </button>
               <div className="d-flex gap-2">
+                <button 
+                  type="button" 
+                  className="btn btn-outline-primary" 
+                  onClick={() => {
+                    closeDetails();              // 1. Luk detalje-modal
+                    openForm(selectedEvent);   // 2. Åbn formen i redigeringstilstand
+                  }}
+                >
+                  ✏️ Edit Event
+                </button>
                 <button type="button" className="btn btn-outline-secondary" onClick={closeDetails}>Close</button>
               </div>
             </div>
