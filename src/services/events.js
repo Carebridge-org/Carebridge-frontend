@@ -1,42 +1,27 @@
 // src/services/events.js
-const KEY = 'continuous-calendar-events';
+import api from './api.js';
 
-function read() {
-  try {
-    const raw = localStorage.getItem(KEY);
-    return raw ? JSON.parse(raw) : [];
-  } catch {
-    return [];
-  }
+// ---- Backend API version ----
+export async function listEvents() {
+  const { data } = await api.get('/events/');
+  return data; // array of EventDTO
 }
 
-function write(list) {
-  localStorage.setItem(KEY, JSON.stringify(list));
+export async function getEvent(id) {
+  const { data } = await api.get(`/events/${id}`);
+  return data;
 }
 
-export function listEvents() {
-  return read();
+export async function createEvent(eventPayload) {
+  const { data } = await api.post('/events/', eventPayload);
+  return data;
 }
 
-export function addEvent(evt) {
-  const list = read();
-  // upsert by id (avoid duplicates if same id is emitted twice)
-  const i = list.findIndex(e => e.id === evt.id);
-  if (i === -1) list.push(evt);
-  else list[i] = { ...list[i], ...evt };
-  write(list);
-  return list;
+export async function updateEvent(id, eventPayload) {
+  const { data } = await api.put(`/events/${id}`, eventPayload);
+  return data;
 }
 
-// ** NY FUNKTION: Slet en event baseret på ID **
-export function deleteEvent(id) {
-  const list = read();
-  // Filtrér listen og behold kun events, hvis ID IKKE matcher det givne ID
-  const updatedList = list.filter(e => e.id !== id);
-  write(updatedList);
-  return updatedList;
-}
-
-export function clearEvents() {
-  write([]);
+export async function deleteEvent(id) {
+  await api.delete(`/events/${id}`);
 }
