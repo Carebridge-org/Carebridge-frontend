@@ -7,6 +7,8 @@ import {
   unmarkEventSeen,
 } from "../services/events.js";
 import { Link } from "react-router-dom";
+import Seen from "../assets/seen.png";
+import Unseen from "../assets/unseen.png";
 
 const getTz = () => {
   try {
@@ -71,7 +73,6 @@ const getEventTimeStr = (e, tz) => {
   if (typeof e.eventTime === "string") return e.eventTime;
   return "";
 };
-
 
 export default function Home() {
   const [loading, setLoading] = useState(true);
@@ -167,19 +168,22 @@ export default function Home() {
   };
 
   const renderSeenToggle = (e) => {
-    const seen = !!e.seenByCurrentUser;
+    const handleClick = () => {
+      toggleSeen(e);
+    };
+
     return (
       <button
         type="button"
-        className={`btn btn-sm ${
-          seen ? "btn-outline-success" : "btn-outline-secondary"
-        } d-flex align-items-center gap-1`}
-        onClick={() => toggleSeen(e)}
-        title={seen ? "Marker som ikke set" : "Marker som set"}
+        className="btn p-0 border-0 bg-transparent"
+        onClick={handleClick}
+        title={e.seenByCurrentUser ? "Markér som ikke set" : "Markér som set"}
       >
-        {/* simple øje / øje-slash med unicode */}
-        <span aria-hidden="true">{seen ? "🙈" : "👁"}</span>
-        <span className="d-none d-sm-inline">{seen ? "Set" : "Ikke set"}</span>
+        <img
+          src={e.seenByCurrentUser ? Seen : Unseen}
+          alt={e.seenByCurrentUser ? "Seen" : "Unseen"}
+          style={{ width: 20, height: 20 }}
+        />
       </button>
     );
   };
