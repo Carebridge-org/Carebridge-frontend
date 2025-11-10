@@ -1,3 +1,4 @@
+// src/pages/Login.jsx
 import { useState } from "react";
 import { login } from "../services/auth";
 import { useNavigate } from "react-router-dom";
@@ -14,18 +15,15 @@ export default function Login() {
     setBusy(true);
 
     try {
-      const { token, user } = await login(form);
+      // This will set token/user in localStorage and emit "auth-changed"
+      await login(form);
 
-      localStorage.setItem("token", token);
-      localStorage.setItem("user", JSON.stringify(user));
-
-      window.dispatchEvent(new Event("storage"));
-
+      // No manual localStorage writes, no manual storage event
       navigate("/", { replace: true });
     } catch (ex) {
       const msg =
-        ex?.response?.data?.msg 
-        ex?.response?.data?.message 
+        ex?.response?.data?.msg ||
+        ex?.response?.data?.message ||
         ex?.message ||
         "Login failed";
       setErr(msg);

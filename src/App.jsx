@@ -1,35 +1,55 @@
-import { useMemo } from "react";
+// src/App.jsx
+import { useEffect, useState } from "react";
 import { Container, Nav, Navbar, Button } from "react-bootstrap";
-import { Routes, Route, Link, Navigate } from "react-router-dom";
+import { Routes, Route, Link, Navigate, useNavigate } from "react-router-dom";
 
 import Home from "./pages/Home";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
 import CalendarPage from "./pages/CalendarPage.jsx";
 import SnackProvider from "./components/SnackProvider.jsx";
-
 import Login from "./pages/Login.jsx";
 import NotFound from "./pages/NotFound.jsx";
 
+import {
+  getToken,
+  getCurrentUser,
+  logout,
+  onAuthChanged,
+} from "./services/auth";
+
+// Helper to re-read auth state
+function readAuth() {
+  return {
+    token: getToken(),
+    user: getCurrentUser(),
+  };
+}
+
+// Private route wrapper
 function PrivateRoute({ children }) {
-  const token = localStorage.getItem("token");
+  const token = getToken();
   return token ? children : <Navigate to="/login" replace />;
 }
 
 export default function App() {
-  const { token, user } = useMemo(() => {
-    const t = localStorage.getItem("token");
-    let u = null;
-    try {
-      u = JSON.parse(localStorage.getItem("user") || "null");
-    } catch {}
-    return { token: t, user: u };
+  const navigate = useNavigate();
+  const [{ token, user }, setAuth] = useState(readAuth());
+
+  // React to login/logout events
+  useEffect(() => {
+    const handle = () => setAuth(readAuth());
+    const unsubscribe = onAuthChanged(handle);
+    window.addEventListener("storage", handle);
+    return () => {
+      unsubscribe();
+      window.removeEventListener("storage", handle);
+    };
   }, []);
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    window.location.href = "/login";
+    logout();
+    navigate("/login", { replace: true });
   };
 
   return (
@@ -58,14 +78,14 @@ export default function App() {
           <Nav>
             {token ? (
               <>
-                {user?.email && (
-                  <Navbar.Text className="me-2">{user.email}</Navbar.Text>
+                {user && (
+                  <Navbar.Text className="me-3">
+                                     {" "}
+                    <span className="fw-semibold">{user.name}</span>{" "}
+                    <small className="text-muted">({user.email})</small>
+                  </Navbar.Text>
                 )}
-                <Button
-                  size="sm"
-                  variant="outline-light"
-                  onClick={handleLogout}
-                >
+                <Button size="sm" variant="outline-light" onClick={handleLogout}>
                   Logout
                 </Button>
               </>
@@ -78,7 +98,7 @@ export default function App() {
         </Container>
       </Navbar>
 
-      {/* Provider ABOVE routes */}
+      {/* Main content */}
       <SnackProvider>
         <Container className="mt-4">
           <Routes>
@@ -93,11 +113,7 @@ export default function App() {
             />
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
-
-            {/* Auth */}
             <Route path="/login" element={<Login />} />
-
-            {/* 404 */}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Container>
