@@ -16,8 +16,16 @@ const normalizeDate = (raw) => {
   return isNaN(d.getTime()) ? null : d;
 };
 
-const toYMD = (d) => d.toISOString().slice(0, 10);
-const toHM = (d) => d.toISOString().slice(11, 16);
+const toYMD = (d) =>
+  d.toLocaleDateString("en-CA", { timeZone: "Europe/Copenhagen" }); // "YYYY-MM-DD"
+
+const toHM = (d) =>
+  d.toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+    timeZone: "Europe/Copenhagen",
+  });
 
 export default function CalendarPage() {
   const [events, setEvents] = useState([]);
