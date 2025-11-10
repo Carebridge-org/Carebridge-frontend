@@ -1,10 +1,8 @@
-// src/services/events.js
 import api from './api.js';
 
-// ---- Backend API version ----
 export async function listEvents() {
   const { data } = await api.get('/events/');
-  return data; // array of EventDTO
+  return data;
 }
 
 export async function getEvent(id) {
@@ -24,4 +22,32 @@ export async function updateEvent(id, eventPayload) {
 
 export async function deleteEvent(id) {
   await api.delete(`/events/${id}`);
+}
+
+const getBrowserTimeZone = () => {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || "Europe/Copenhagen";
+  } catch {
+    return "Europe/Copenhagen";
+  }
+};
+
+export const listTodayTomorrowEvents = async () => {
+  const tz = getBrowserTimeZone();
+  const { data } = await api.get("/events/", {
+    params: {
+      from: "today",
+      to: "tomorrow",
+      tz,
+    },
+  });
+  return data;
+};
+
+export async function markEventSeen(id) {
+  return api.post(`/events/${id}/mark-seen`);
+}
+
+export async function unmarkEventSeen(id) {
+  return api.delete(`/events/${id}/mark-seen`);
 }

@@ -1,4 +1,3 @@
-// src/services/api.js
 import axios from 'axios';
 
 const api = axios.create({
@@ -6,24 +5,23 @@ const api = axios.create({
   headers: { 'Content-Type': 'application/json' }
 });
 
-// Læs token fra localStorage og sæt Authorization
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });
 
-// Auto-logout ved 401 (valgfrit)
 api.interceptors.response.use(
   (res) => res,
   (err) => {
     if (err?.response?.status === 401) {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
-      // Du kan evt. redirecte til /login her
     }
     return Promise.reject(err);
   }
 );
+
+
 
 export default api;

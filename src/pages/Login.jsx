@@ -3,7 +3,7 @@ import { login } from "../services/auth";
 import { useNavigate } from "react-router-dom";
 
 export default function Login() {
-  const nav = useNavigate();
+  const navigate = useNavigate();
   const [form, setForm] = useState({ email: "", password: "" });
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
@@ -12,13 +12,20 @@ export default function Login() {
     e.preventDefault();
     setErr("");
     setBusy(true);
+
     try {
-      await login(form);
-      nav("/calendar");
+      const { token, user } = await login(form);
+
+      localStorage.setItem("token", token);
+      localStorage.setItem("user", JSON.stringify(user));
+
+      window.dispatchEvent(new Event("storage"));
+
+      navigate("/", { replace: true });
     } catch (ex) {
       const msg =
-        ex?.response?.data?.msg ||
-        ex?.response?.data?.message ||
+        ex?.response?.data?.msg 
+        ex?.response?.data?.message 
         ex?.message ||
         "Login failed";
       setErr(msg);
