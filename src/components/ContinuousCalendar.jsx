@@ -1,17 +1,43 @@
-'use client';
+"use client";
 
-import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
+import React, {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useCallback,
+} from "react";
 
-const daysOfWeek = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-const monthNames  = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const daysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const monthNames = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+];
 
-const pad = (n) => String(n).padStart(2, '0');
-const toLocalYMD = (d) => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const pad = (n) => String(n).padStart(2, "0");
+const toLocalYMD = (d) =>
+  `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 
-// run a function after layout has painted (reliable for refs/position)
-const afterPaint = (fn) => requestAnimationFrame(() => requestAnimationFrame(fn));
+const afterPaint = (fn) =>
+  requestAnimationFrame(() => requestAnimationFrame(fn));
 
-export const ContinuousCalendar = ({ onClick, onCreate, onEventClick, onDelete, events = [] }) => {
+export const ContinuousCalendar = ({
+  onClick,
+  onCreate,
+  onEventClick,
+  onDelete,
+  events = [],
+}) => {
   const today = new Date();
   const dayRefs = useRef([]);
   const containerRef = useRef(null);
@@ -21,132 +47,183 @@ export const ContinuousCalendar = ({ onClick, onCreate, onEventClick, onDelete, 
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [editingEvent, setEditingEvent] = useState(null);
 
-  // ---------- Create-Event form ----------
   const [showForm, setShowForm] = useState(false);
   const [formErrors, setFormErrors] = useState({});
   const [formData, setFormData] = useState(() => ({
-    title: '',
-    description: '',
+    title: "",
+    description: "",
     date: toLocalYMD(new Date()),
-    time: '',
-    type: 'Meeting',
+    time: "",
+    type: "Meeting",
     showOnBoard: true,
   }));
 
-  const eventTypes = ['Meeting', 'Task', 'Reminder', 'Holiday', 'Private', 'Other'];
+  const eventTypes = [
+    "Meeting",
+    "Task",
+    "Reminder",
+    "Holiday",
+    "Private",
+    "Other",
+  ];
   const monthOptions = monthNames.map((m, i) => ({ name: m, value: `${i}` }));
 
-  // ---- visuals per event type ----
   const visuals = (type) => {
     const map = {
-      Meeting: { icon: '🧑‍💼', bg: '#e7f1ff', border: '#b7d4ff', text: '#0d6efd' },
-      Task:    { icon: '📝',  bg: '#e6fff7', border: '#b9f2df', text: '#15997a' },
-      Reminder:{ icon: '⏰',  bg: '#fff8e6', border: '#ffe1a3', text: '#b08900' },
-      Holiday: { icon: '🎉',  bg: '#ffe8ea', border: '#ffc3c8', text: '#c43b51' },
-      Private: { icon: '🔒',  bg: '#eef4ff', border: '#bcd0ff', text: '#2b5bd7' },
-      Other:   { icon: '✨',  bg: '#f0f2f5', border: '#d7dbe1', text: '#5c6773' },
+      Meeting: {
+        icon: "🧑‍💼",
+        bg: "#e7f1ff",
+        border: "#b7d4ff",
+        text: "#0d6efd",
+      },
+      Task: { icon: "📝", bg: "#e6fff7", border: "#b9f2df", text: "#15997a" },
+      Reminder: {
+        icon: "⏰",
+        bg: "#fff8e6",
+        border: "#ffe1a3",
+        text: "#b08900",
+      },
+      Holiday: {
+        icon: "🎉",
+        bg: "#ffe8ea",
+        border: "#ffc3c8",
+        text: "#c43b51",
+      },
+      Private: {
+        icon: "🔒",
+        bg: "#eef4ff",
+        border: "#bcd0ff",
+        text: "#2b5bd7",
+      },
+      Other: { icon: "✨", bg: "#f0f2f5", border: "#d7dbe1", text: "#5c6773" },
     };
     return map[type] || map.Other;
   };
 
-  // ---- group events by YYYY-MM-DD (only showOnBoard) ----
   const eventsByDate = useMemo(() => {
     const map = new Map();
+
     (events || []).forEach((e) => {
       if (!e?.showOnBoard) return;
-      const key = (e.date || '').slice(0, 10);
+
+      let key = null;
+
+      if (e.startAt) {
+        const dt = new Date(e.startAt);
+        if (!isNaN(dt.getTime())) {
+          key = toLocalYMD(dt);
+        }
+      }
+
+      if (!key && e.date) {
+        key = String(e.date).slice(0, 10);
+      }
+
       if (!key) return;
+
       if (!map.has(key)) map.set(key, []);
       map.get(key).push(e);
     });
-    for (const [k, arr] of map.entries()) {
-      arr.sort((a, b) => (a.time || '').localeCompare(b.time || '') || a.title.localeCompare(b.title));
-      map.set(k, arr);
+
+    for (const [, arr] of map.entries()) {
+      arr.sort(
+        (a, b) =>
+          (a.time || "").localeCompare(b.time || "") ||
+          (a.title || "").localeCompare(b.title || "")
+      );
     }
+
     return map;
   }, [events]);
 
-  // ---------- single entry point to open the modal ----------
-const openForm = useCallback((eventToEdit = null, dateObj = null) => {
+  const openForm = useCallback((eventToEdit = null, dateObj = null) => {
     setFormErrors({});
-    setEditingEvent(eventToEdit); // Gem eventet, hvis vi er i redigeringstilstand
+    setEditingEvent(eventToEdit || null);
 
     if (eventToEdit) {
-      // Redigering: Udfyld formularen med eksisterende data
       setFormData({
-        id: eventToEdit.id,     // VIGTIGT: Husk ID'et
-        title: eventToEdit.title,
-        description: eventToEdit.description,
-        date: eventToEdit.date.slice(0, 10), // Sikkerhed for format
-        time: eventToEdit.time || '',
-        type: eventToEdit.type,
+        id: eventToEdit.id,
+        title: eventToEdit.title || "",
+        description: eventToEdit.description || "",
+        date:
+          (eventToEdit.date || "").slice(0, 10) ||
+          (eventToEdit.startAt
+            ? toLocalYMD(new Date(eventToEdit.startAt))
+            : toLocalYMD(new Date())),
+        time: eventToEdit.time || "",
+        type: eventToEdit.type || "Meeting",
         showOnBoard: !!eventToEdit.showOnBoard,
       });
     } else {
-      // Oprettelse: Nulstil formularen
-      const initialDate = dateObj ? toLocalYMD(dateObj) : toLocalYMD(new Date());
-      setFormData(() => ({ 
-        id: null, 
-        title: '', 
-        description: '', 
-        date: initialDate, 
-        time: '', 
-        type: 'Meeting', 
-        showOnBoard: true 
-      }));
+      const initialDate = dateObj
+        ? toLocalYMD(dateObj)
+        : toLocalYMD(new Date());
+      setFormData({
+        id: null,
+        title: "",
+        description: "",
+        date: initialDate,
+        time: "",
+        type: "Meeting",
+        showOnBoard: true,
+      });
     }
+
     setShowForm(true);
   }, []);
 
-  // ---------- create / validate ----------
   const validate = () => {
     const e = {};
-    if (!formData.title?.trim()) e.title = 'Title is required';
-    if (!formData.date) e.date = 'Date is required';
+    if (!formData.title?.trim()) e.title = "Title is required";
+    if (!formData.date) e.date = "Date is required";
     setFormErrors(e);
     return Object.keys(e).length === 0;
   };
 
-const handleSubmit = (ev) => {
+  const handleSubmit = (ev) => {
     ev.preventDefault();
     if (!validate()) return;
 
-    const [y, m, d] = formData.date.split('-').map(Number);
-    const out = new Date(y, m - 1, d);
+    const [y, m, d] = formData.date.split("-").map(Number);
+    const out = new Date(y, (m || 1) - 1, d || 1);
     if (formData.time) {
-      const [hh, mi] = formData.time.split(':').map(Number);
+      const [hh, mi] = formData.time.split(":").map(Number);
       out.setHours(hh || 0, mi || 0, 0, 0);
     }
 
-    // Tjek om vi er i redigeringstilstand. Brug eksisterende ID eller lav nyt.
     const eventId = editingEvent ? editingEvent.id : `${Date.now()}`;
-    
+
     const payload = {
-      id: eventId, 
+      id: eventId,
       title: formData.title.trim(),
-      description: formData.description?.trim() || '',
-      date: formData.date,       
-      time: formData.time || '', 
+      description: formData.description?.trim() || "",
+      date: formData.date,
+      time: formData.time || "",
       datetime: out.toISOString(),
       type: formData.type,
       showOnBoard: !!formData.showOnBoard,
-      createdAt: editingEvent ? editingEvent.createdAt : new Date().toISOString(), // Bevar oprettelsesdato
     };
 
-    if (onCreate) onCreate(payload); // Oprettet/Opdateret eventet
+    if (onCreate) onCreate(payload);
 
     setShowForm(false);
-    setEditingEvent(null); // Nulstil state efter gem
-    setFormData((p) => ({ ...p, id: null, title: '', description: '', time: '', showOnBoard: true }));
+    setEditingEvent(null);
+    setFormData((p) => ({
+      ...p,
+      id: null,
+      title: "",
+      description: "",
+      time: "",
+      showOnBoard: true,
+    }));
   };
 
-  // ---------- scrolling helpers ----------
   const scrollToDay = (monthIndex, dayIndex) => {
     const idx = dayRefs.current.findIndex(
       (ref) =>
         ref &&
-        ref.getAttribute('data-month') === `${monthIndex}` &&
-        ref.getAttribute('data-day') === `${dayIndex}`
+        ref.getAttribute("data-month") === `${monthIndex}` &&
+        ref.getAttribute("data-day") === `${dayIndex}`
     );
     const target = dayRefs.current[idx];
     if (idx === -1 || !target) return;
@@ -156,11 +233,12 @@ const handleSubmit = (ev) => {
 
     if (cont) {
       const cr = cont.getBoundingClientRect();
-      const offset = r.top - cr.top - (cr.height / 2.5) + (r.height / 2);
-      cont.scrollTo({ top: cont.scrollTop + offset, behavior: 'smooth' });
+      const offset = r.top - cr.top - cr.height / 2.5 + r.height / 2;
+      cont.scrollTo({ top: cont.scrollTop + offset, behavior: "smooth" });
     } else {
-      const offset = window.scrollY + r.top - (window.innerHeight / 2.5) + (r.height / 2);
-      window.scrollTo({ top: offset, behavior: 'smooth' });
+      const offset =
+        window.scrollY + r.top - window.innerHeight / 2.5 + r.height / 2;
+      window.scrollTo({ top: offset, behavior: "smooth" });
     }
   };
 
@@ -170,7 +248,6 @@ const handleSubmit = (ev) => {
     afterPaint(() => scrollToDay(m, d));
   };
 
-  // ---------- UI handlers ----------
   const handleMonthChange = (e) => {
     const i = Number(e.target.value);
     setSelectedMonth(i);
@@ -196,7 +273,7 @@ const handleSubmit = (ev) => {
   const handleInlineAddClick = (e, day, month, yy) => {
     e.preventDefault();
     e.stopPropagation();
-    const m = month < 0 ? 11 : month;  // handle leading filler days
+    const m = month < 0 ? 11 : month;
     const y = month < 0 ? yy - 1 : yy;
     openForm(null, new Date(y, m, day));
   };
@@ -206,16 +283,16 @@ const handleSubmit = (ev) => {
     setSelectedEvent(eObj);
     if (onEventClick) onEventClick(eObj);
   };
+
   const closeDetails = () => setSelectedEvent(null);
 
   const handleDeleteClick = (eventObj) => {
     if (onDelete) {
-      onDelete(eventObj.id); // Kald parent-funktionen, der sletter fra localStorage
-      closeDetails();         // Luk detalje-modalen, da eventet er væk
+      onDelete(eventObj.id);
+      closeDetails();
     }
   };
-  
-  // ---------- calendar build ----------
+
   const generateCalendar = useMemo(() => {
     dayRefs.current = [];
 
@@ -224,36 +301,52 @@ const handleSubmit = (ev) => {
     const daysInYear = () => {
       const out = [];
       const startDay = new Date(year, 0, 1).getDay();
-      if (startDay < 6) for (let i = 0; i < startDay; i++) out.push({ month: -1, day: 32 - startDay + i });
+      if (startDay < 6) {
+        for (let i = 0; i < startDay; i++) {
+          out.push({ month: -1, day: 32 - startDay + i });
+        }
+      }
       for (let m = 0; m < 12; m++) {
         const dim = new Date(year, m + 1, 0).getDate();
-        for (let d = 1; d <= dim; d++) out.push({ month: m, day: d });
+        for (let d = 1; d <= dim; d++) {
+          out.push({ month: m, day: d });
+        }
       }
       const tail = out.length % 7;
-      if (tail > 0) for (let d = 1; d <= 7 - tail; d++) out.push({ month: 0, day: d });
+      if (tail > 0) {
+        for (let d = 1; d <= 7 - tail; d++) {
+          out.push({ month: 0, day: d });
+        }
+      }
       return out;
     };
 
     const calendarDays = daysInYear();
     const weeks = [];
-    for (let i = 0; i < calendarDays.length; i += 7) weeks.push(calendarDays.slice(i, i + 7));
+    for (let i = 0; i < calendarDays.length; i += 7) {
+      weeks.push(calendarDays.slice(i, i + 7));
+    }
 
     return weeks.map((week, w) => (
       <div className="grid-7 w-100" key={`week-${w}`}>
         {week.map(({ month, day }, di) => {
           const idx = w * 7 + di;
           const isNewMonth = idx === 0 || calendarDays[idx - 1].month !== month;
-          const isToday = todayLocal.getMonth() === month && todayLocal.getDate() === day && todayLocal.getFullYear() === year;
+          const isToday =
+            todayLocal.getMonth() === month &&
+            todayLocal.getDate() === day &&
+            todayLocal.getFullYear() === year;
 
-          const dateKey = month >= 0 ? `${year}-${pad(month + 1)}-${pad(day)}` : null;
-          const items = dateKey ? (eventsByDate.get(dateKey) || []) : [];
+          const dateKey =
+            month >= 0 ? `${year}-${pad(month + 1)}-${pad(day)}` : null;
+          const items = dateKey ? eventsByDate.get(dateKey) || [] : [];
 
-          const featured = items.find((e) => e.type === 'Private');
-          const regular  = items.filter((e) => e.type !== 'Private');
+          const featured = items.find((e) => e.type === "Private");
+          const regular = items.filter((e) => e.type !== "Private");
           const iconStack = items.slice(0, 3).map((e) => visuals(e.type).icon);
 
           const keyActivate = (cb) => (evt) => {
-            if (evt.key === 'Enter' || evt.key === ' ') {
+            if (evt.key === "Enter" || evt.key === " ") {
               evt.preventDefault();
               cb(evt);
             }
@@ -262,7 +355,9 @@ const handleSubmit = (ev) => {
           return (
             <div
               key={`${month}-${day}`}
-              ref={(el) => { dayRefs.current[idx] = el; }}
+              ref={(el) => {
+                dayRefs.current[idx] = el;
+              }}
               data-month={month}
               data-day={day}
               onClick={() => handleDayClick(day, month, year)}
@@ -272,14 +367,27 @@ const handleSubmit = (ev) => {
                 <div className="position-absolute top-0 start-0 end-0 bottom-0 p-2 d-flex flex-column">
                   <div className="d-flex justify-content-between align-items-start">
                     <div className="d-flex align-items-center gap-2">
-                      <span className={`day-number modern-day-number ${isToday ? 'is-today' : ''}`}>{day}</span>
-                      {isNewMonth && (<span className="month-label text-truncate">{monthNames[month]}</span>)}
+                      <span
+                        className={
+                          "day-number modern-day-number " +
+                          (isToday ? "is-today" : "")
+                        }
+                      >
+                        {day}
+                      </span>
+                      {isNewMonth && month >= 0 && (
+                        <span className="month-label text-truncate">
+                          {monthNames[month]}
+                        </span>
+                      )}
                     </div>
 
                     {iconStack.length > 0 && (
                       <div className="icon-stack">
                         {iconStack.map((ic, i) => (
-                          <span className="icon-badge" key={i} title="Event">{ic}</span>
+                          <span className="icon-badge" key={i} title="Event">
+                            {ic}
+                          </span>
                         ))}
                       </div>
                     )}
@@ -290,19 +398,25 @@ const handleSubmit = (ev) => {
                       role="button"
                       tabIndex={0}
                       onClick={(ev) => handleEventOpen(featured, ev)}
-                      onKeyDown={keyActivate((ev) => handleEventOpen(featured, ev))}
+                      onKeyDown={keyActivate((ev) =>
+                        handleEventOpen(featured, ev)
+                      )}
                       className="event-featured mt-2"
                       title={featured.title}
                       style={{
                         background: visuals(featured.type).bg,
                         borderColor: visuals(featured.type).border,
                         color: visuals(featured.type).text,
-                        cursor: 'pointer',
+                        cursor: "pointer",
                       }}
                     >
-                      <span className="me-2">{visuals(featured.type).icon}</span>
+                      <span className="me-2">
+                        {visuals(featured.type).icon}
+                      </span>
                       <strong className="me-1">{featured.title}</strong>
-                      {featured.time && <span className="opacity-75">{featured.time}</span>}
+                      {featured.time && (
+                        <span className="opacity-75">{featured.time}</span>
+                      )}
                     </div>
                   )}
 
@@ -316,20 +430,32 @@ const handleSubmit = (ev) => {
                             role="button"
                             tabIndex={0}
                             onClick={(ev) => handleEventOpen(eObj, ev)}
-                            onKeyDown={keyActivate((ev) => handleEventOpen(eObj, ev))}
+                            onKeyDown={keyActivate((ev) =>
+                              handleEventOpen(eObj, ev)
+                            )}
                             className="event-pill"
-                            title={`${eObj.title}${eObj.time ? ` • ${eObj.time}` : ''}`}
-                            style={{ background: v.bg, borderColor: v.border, color: v.text, cursor: 'pointer' }}
+                            title={
+                              eObj.title + (eObj.time ? ` • ${eObj.time}` : "")
+                            }
+                            style={{
+                              background: v.bg,
+                              borderColor: v.border,
+                              color: v.text,
+                              cursor: "pointer",
+                            }}
                           >
                             <span className="me-2">{v.icon}</span>
                             <span className="text-truncate">
-                              {eObj.time ? `${eObj.time} ` : ''}{eObj.title}
+                              {eObj.time ? `${eObj.time} ` : ""}
+                              {eObj.title}
                             </span>
                           </div>
                         );
                       })}
                       {regular.length > 2 && (
-                        <div className="event-more">+{regular.length - 2} more</div>
+                        <div className="event-more">
+                          +{regular.length - 2} more
+                        </div>
                       )}
                     </div>
                   )}
@@ -351,29 +477,46 @@ const handleSubmit = (ev) => {
     ));
   }, [year, eventsByDate]);
 
-  // Month “observer” keeps dropdown synced during scroll
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
-    const obs = new IntersectionObserver((entries) => {
-      entries.forEach((ent) => {
-        if (ent.isIntersecting) {
-          const m = parseInt(ent.target.getAttribute('data-month'), 10);
-          if (!Number.isNaN(m)) setSelectedMonth(m);
-        }
-      });
-    }, { root: container, rootMargin: '-75% 0px -25% 0px', threshold: 0 });
+    const obs = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((ent) => {
+          if (ent.isIntersecting) {
+            const m = parseInt(ent.target.getAttribute("data-month"), 10);
+            if (!Number.isNaN(m) && m >= 0) {
+              setSelectedMonth(m);
+            }
+          }
+        });
+      },
+      {
+        root: container,
+        rootMargin: "-75% 0px -25% 0px",
+        threshold: 0,
+      }
+    );
 
     dayRefs.current.forEach((ref) => {
-      if (ref && ref.getAttribute('data-day') === '15') obs.observe(ref);
+      if (
+        ref &&
+        ref.getAttribute("data-day") === "15" &&
+        ref.getAttribute("data-month") >= 0
+      ) {
+        obs.observe(ref);
+      }
     });
 
     return () => obs.disconnect();
   }, [generateCalendar]);
 
   return (
-    <div ref={containerRef} className="no-scrollbar calendar-container bg-white text-dark shadow rounded-top-4 pb-4">
+    <div
+      ref={containerRef}
+      className="no-scrollbar calendar-container bg-white text-dark shadow rounded-top-4 pb-4"
+    >
       {/* toolbar */}
       <div className="calendar-toolbar position-sticky top-0 w-100 bg-white rounded-top-4 px-3 px-sm-4 pt-3 pt-sm-4 border-bottom">
         <div className="mb-3 d-flex w-100 flex-wrap align-items-center justify-content-between gap-2">
@@ -384,56 +527,105 @@ const handleSubmit = (ev) => {
               options={monthOptions}
               onChange={handleMonthChange}
             />
-            <button type="button" className="btn btn-outline-secondary" onClick={handleTodayClick}>
+            <button
+              type="button"
+              className="btn btn-outline-secondary"
+              onClick={handleTodayClick}
+            >
               Today
             </button>
-            <button type="button" className="btn btn-primary" onClick={handleAddEventButton}>
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={handleAddEventButton}
+            >
               + Add Event
             </button>
           </div>
           <div className="d-flex align-items-center gap-2">
-            <button onClick={handlePrevYear} className="btn btn-outline-secondary rounded-circle p-2" aria-label="Previous year">‹</button>
-            <h1 className="fs-5 text-center mb-0" style={{ minWidth: '5rem' }}>{year}</h1>
-            <button onClick={handleNextYear} className="btn btn-outline-secondary rounded-circle p-2" aria-label="Next year">›</button>
+            <button
+              onClick={handlePrevYear}
+              className="btn btn-outline-secondary rounded-circle p-2"
+              aria-label="Previous year"
+            >
+              ‹
+            </button>
+            <h1 className="fs-5 text-center mb-0" style={{ minWidth: "5rem" }}>
+              {year}
+            </h1>
+            <button
+              onClick={handleNextYear}
+              className="btn btn-outline-secondary rounded-circle p-2"
+              aria-label="Next year"
+            >
+              ›
+            </button>
           </div>
         </div>
         <div className="grid-7 text-secondary fw-semibold">
           {daysOfWeek.map((d, i) => (
-            <div key={i} className="w-100 text-center py-2 border-bottom">{d}</div>
+            <div key={i} className="w-100 text-center py-2 border-bottom">
+              {d}
+            </div>
           ))}
         </div>
       </div>
 
       {/* grid */}
-      <div className="w-100 px-3 px-sm-4 pt-3">
-        {generateCalendar}
-      </div>
+      <div className="w-100 px-3 px-sm-4 pt-3">{generateCalendar}</div>
 
       {/* Create Event Modal */}
       {showForm && (
-        <div className="position-fixed top-0 start-0 end-0 bottom-0 d-flex align-items-center justify-content-center"
-             style={{ background: 'rgba(0,0,0,0.35)', zIndex: 12000 }}>
-          <div className="bg-white rounded-4 shadow p-3 p-sm-4" style={{ width: 'min(640px, 92vw)' }}
-               role="dialog" aria-modal="true" aria-labelledby="newEventTitle">
+        <div
+          className="position-fixed top-0 start-0 end-0 bottom-0 d-flex align-items-center justify-content-center"
+          style={{
+            background: "rgba(0,0,0,0.35)",
+            zIndex: 12000,
+          }}
+        >
+          <div
+            className="bg-white rounded-4 shadow p-3 p-sm-4"
+            style={{ width: "min(640px, 92vw)" }}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="newEventTitle"
+          >
             <div className="d-flex align-items-center justify-content-between mb-3">
               <h2 id="newEventTitle" className="h5 mb-0">
-                {editingEvent ? 'Edit Event' : 'Create New Event'} 
+                {editingEvent ? "Edit Event" : "Create New Event"}
               </h2>
-              <button className="btn btn-light" onClick={() => setShowForm(false)} aria-label="Close">✕</button>
+              <button
+                className="btn btn-light"
+                onClick={() => setShowForm(false)}
+                aria-label="Close"
+              >
+                ✕
+              </button>
             </div>
 
             <form onSubmit={handleSubmit} noValidate>
               <div className="mb-3">
-                <label className="form-label">Title <span className="text-danger">*</span></label>
+                <label className="form-label">
+                  Title <span className="text-danger">*</span>
+                </label>
                 <input
                   type="text"
-                  className={`form-control ${formErrors.title ? 'is-invalid' : ''}`}
+                  className={
+                    "form-control " + (formErrors.title ? "is-invalid" : "")
+                  }
                   value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      title: e.target.value,
+                    })
+                  }
                   placeholder="Event title"
                   required
                 />
-                {formErrors.title && <div className="invalid-feedback">{formErrors.title}</div>}
+                {formErrors.title && (
+                  <div className="invalid-feedback">{formErrors.title}</div>
+                )}
               </div>
 
               <div className="mb-3">
@@ -442,22 +634,38 @@ const handleSubmit = (ev) => {
                   className="form-control"
                   rows={3}
                   value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      description: e.target.value,
+                    })
+                  }
                   placeholder="Optional details"
                 />
               </div>
 
               <div className="row g-3">
                 <div className="col-12 col-sm-6">
-                  <label className="form-label">Date <span className="text-danger">*</span></label>
+                  <label className="form-label">
+                    Date <span className="text-danger">*</span>
+                  </label>
                   <input
                     type="date"
-                    className={`form-control ${formErrors.date ? 'is-invalid' : ''}`}
+                    className={
+                      "form-control " + (formErrors.date ? "is-invalid" : "")
+                    }
                     value={formData.date}
-                    onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        date: e.target.value,
+                      })
+                    }
                     required
                   />
-                  {formErrors.date && <div className="invalid-feedback">{formErrors.date}</div>}
+                  {formErrors.date && (
+                    <div className="invalid-feedback">{formErrors.date}</div>
+                  )}
                 </div>
                 <div className="col-12 col-sm-6">
                   <label className="form-label">Time</label>
@@ -465,7 +673,12 @@ const handleSubmit = (ev) => {
                     type="time"
                     className="form-control"
                     value={formData.time}
-                    onChange={(e) => setFormData({ ...formData, time: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        time: e.target.value,
+                      })
+                    }
                   />
                 </div>
               </div>
@@ -476,9 +689,18 @@ const handleSubmit = (ev) => {
                   <select
                     className="form-select"
                     value={formData.type}
-                    onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        type: e.target.value,
+                      })
+                    }
                   >
-                    {eventTypes.map((t) => <option key={t} value={t}>{t}</option>)}
+                    {eventTypes.map((t) => (
+                      <option key={t} value={t}>
+                        {t}
+                      </option>
+                    ))}
                   </select>
                 </div>
                 <div className="col-12 col-sm-6 d-flex align-items-end">
@@ -488,17 +710,30 @@ const handleSubmit = (ev) => {
                       type="checkbox"
                       id="showOnBoard"
                       checked={formData.showOnBoard}
-                      onChange={(e) => setFormData({ ...formData, showOnBoard: e.target.checked })}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          showOnBoard: e.target.checked,
+                        })
+                      }
                     />
-                    <label className="form-check-label" htmlFor="showOnBoard">Show on Board</label>
+                    <label className="form-check-label" htmlFor="showOnBoard">
+                      Show on Board
+                    </label>
                   </div>
                 </div>
               </div>
 
               <div className="d-flex justify-content-end gap-2 mt-4">
-                <button type="button" className="btn btn-outline-secondary" onClick={() => setShowForm(false)}>Cancel</button>
+                <button
+                  type="button"
+                  className="btn btn-outline-secondary"
+                  onClick={() => setShowForm(false)}
+                >
+                  Cancel
+                </button>
                 <button type="submit" className="btn btn-primary">
-                  {editingEvent ? 'Save Changes' : 'Create Event'}
+                  {editingEvent ? "Save Changes" : "Create Event"}
                 </button>
               </div>
             </form>
@@ -508,24 +743,43 @@ const handleSubmit = (ev) => {
 
       {/* Event Details Modal */}
       {selectedEvent && (
-        <div className="position-fixed top-0 start-0 end-0 bottom-0 d-flex align-items-center justify-content-center"
-             style={{ background: 'rgba(0,0,0,0.35)', zIndex: 12000 }}>
-          <div className="bg-white rounded-4 shadow p-3 p-sm-4" style={{ width: 'min(560px, 92vw)' }}
-               role="dialog" aria-modal="true" aria-labelledby="eventDetailsTitle">
+        <div
+          className="position-fixed top-0 start-0 end-0 bottom-0 d-flex align-items-center justify-content-center"
+          style={{
+            background: "rgba(0,0,0,0.35)",
+            zIndex: 12000,
+          }}
+        >
+          <div
+            className="bg-white rounded-4 shadow p-3 p-sm-4"
+            style={{ width: "min(560px, 92vw)" }}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="eventDetailsTitle"
+          >
             <div className="d-flex align-items-center justify-content-between mb-3">
-              <h2 id="eventDetailsTitle" className="h5 mb-0">Event details</h2>
-              <button className="btn btn-light" onClick={closeDetails} aria-label="Close">✕</button>
+              <h2 id="eventDetailsTitle" className="h5 mb-0">
+                Event details
+              </h2>
+              <button
+                className="btn btn-light"
+                onClick={closeDetails}
+                aria-label="Close"
+              >
+                ✕
+              </button>
             </div>
 
             <div className="d-flex align-items-start gap-3">
               <div
                 className="rounded-3 d-flex align-items-center justify-content-center"
                 style={{
-                  width: 48, height: 48,
+                  width: 48,
+                  height: 48,
                   background: visuals(selectedEvent.type).bg,
-                  border: `1px solid ${visuals(selectedEvent.type).border}`,
+                  border: "1px solid " + visuals(selectedEvent.type).border,
                   color: visuals(selectedEvent.type).text,
-                  fontSize: 24
+                  fontSize: 24,
                 }}
               >
                 {visuals(selectedEvent.type).icon}
@@ -535,7 +789,10 @@ const handleSubmit = (ev) => {
                   <h3 className="h5 mb-0">{selectedEvent.title}</h3>
                   <span
                     className="badge text-bg-light border"
-                    style={{ borderColor: visuals(selectedEvent.type).border, color: visuals(selectedEvent.type).text }}
+                    style={{
+                      borderColor: visuals(selectedEvent.type).border,
+                      color: visuals(selectedEvent.type).text,
+                    }}
                   >
                     {selectedEvent.type}
                   </span>
@@ -543,10 +800,14 @@ const handleSubmit = (ev) => {
 
                 <div className="text-secondary mt-1">
                   {(() => {
-                    const [yy, mm, dd] = (selectedEvent.date || '').split('-').map(Number);
-                    const [hh, mi] = selectedEvent.time ? selectedEvent.time.split(':').map(Number) : [0, 0];
-                    const dt = new Date(yy, (mm || 1) - 1, dd || 1, hh || 0, mi || 0);
-                    return dt.toLocaleString();
+                    const base = selectedEvent.startAt
+                      ? new Date(selectedEvent.startAt)
+                      : new Date(
+                          `${selectedEvent.date || ""}T${
+                            selectedEvent.time || "00:00"
+                          }`
+                        );
+                    return isNaN(base.getTime()) ? "" : base.toLocaleString();
                   })()}
                 </div>
               </div>
@@ -555,29 +816,38 @@ const handleSubmit = (ev) => {
             {selectedEvent.description && (
               <div className="mt-3">
                 <div className="fw-semibold mb-1">Description</div>
-                <div className="text-secondary">{selectedEvent.description}</div>
+                <div className="text-secondary">
+                  {selectedEvent.description}
+                </div>
               </div>
             )}
 
-<div className="d-flex justify-content-between mt-4">
-              <button 
-                type="button" 
-                className="btn btn-danger" 
-                onClick={() => handleDeleteClick(selectedEvent)}>
+            <div className="d-flex justify-content-between mt-4">
+              <button
+                type="button"
+                className="btn btn-danger"
+                onClick={() => handleDeleteClick(selectedEvent)}
+              >
                 Delete Event
               </button>
               <div className="d-flex gap-2">
-                <button 
-                  type="button" 
-                  className="btn btn-outline-primary" 
+                <button
+                  type="button"
+                  className="btn btn-outline-primary"
                   onClick={() => {
-                    closeDetails();              // 1. Luk detalje-modal
-                    openForm(selectedEvent);   // 2. Åbn formen i redigeringstilstand
+                    closeDetails();
+                    openForm(selectedEvent);
                   }}
                 >
                   ✏️ Edit Event
                 </button>
-                <button type="button" className="btn btn-outline-secondary" onClick={closeDetails}>Close</button>
+                <button
+                  type="button"
+                  className="btn btn-outline-secondary"
+                  onClick={closeDetails}
+                >
+                  Close
+                </button>
               </div>
             </div>
           </div>
@@ -587,12 +857,34 @@ const handleSubmit = (ev) => {
   );
 };
 
-export const Select = ({ name, value, label, options = [], onChange, className }) => (
-  <div className={className || ''}>
-    {label && (<label htmlFor={name} className="form-label fw-medium text-dark">{label}</label>)}
+export const Select = ({
+  name,
+  value,
+  label,
+  options = [],
+  onChange,
+  className,
+}) => (
+  <div className={className || ""}>
+    {label && (
+      <label htmlFor={name} className="form-label fw-medium text-dark">
+        {label}
+      </label>
+    )}
     <div className="position-relative" style={{ minWidth: 180 }}>
-      <select id={name} name={name} value={value} onChange={onChange} className="form-select" required>
-        {options.map((o) => (<option key={o.value} value={o.value}>{o.name}</option>))}
+      <select
+        id={name}
+        name={name}
+        value={value}
+        onChange={onChange}
+        className="form-select"
+        required
+      >
+        {options.map((o) => (
+          <option key={o.value} value={o.value}>
+            {o.name}
+          </option>
+        ))}
       </select>
     </div>
   </div>
