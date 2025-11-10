@@ -1,28 +1,26 @@
-// src/pages/Login.jsx
-import { useState } from 'react';
-import { login } from '../services/auth';
-import { useNavigate } from 'react-router-dom';
+import { useState } from "react";
+import { login } from "../services/auth";
+import { useNavigate } from "react-router-dom";
 
 export default function Login() {
   const nav = useNavigate();
-  const [form, setForm] = useState({ email: '', password: '' });
-  const [err, setErr] = useState('');
+  const [form, setForm] = useState({ email: "", password: "" });
+  const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
 
   async function onSubmit(e) {
     e.preventDefault();
-    setErr('');
+    setErr("");
     setBusy(true);
     try {
-      await login(form);              // must send { email, password }
-      nav('/calendar');
+      await login(form);
+      nav("/calendar");
     } catch (ex) {
-      // Try to surface backend message if present
       const msg =
         ex?.response?.data?.msg ||
         ex?.response?.data?.message ||
         ex?.message ||
-        'Login failed';
+        "Login failed";
       setErr(msg);
       console.error(ex);
     } finally {
@@ -33,7 +31,7 @@ export default function Login() {
   return (
     <form onSubmit={onSubmit} style={{ maxWidth: 360 }}>
       <h2>Login</h2>
-      {err && <p style={{ color: 'red' }}>{err}</p>}
+      {err && <p style={{ color: "red" }}>{err}</p>}
 
       <input
         name="email"
@@ -56,7 +54,7 @@ export default function Login() {
       />
 
       <button type="submit" disabled={busy}>
-        {busy ? 'Logging in…' : 'Log ind'}
+        {busy ? "Logging in…" : "Log ind"}
       </button>
     </form>
   );
