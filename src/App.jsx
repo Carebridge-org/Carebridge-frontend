@@ -1,4 +1,3 @@
-// src/App.jsx
 import { useEffect, useState } from "react";
 import { Container, Nav, Navbar, Button } from "react-bootstrap";
 import { Routes, Route, Link, Navigate, useNavigate } from "react-router-dom";
@@ -18,7 +17,7 @@ import {
   onAuthChanged,
 } from "./services/auth";
 
-// Helper to re-read auth state
+// Helper
 function readAuth() {
   return {
     token: getToken(),
@@ -26,7 +25,6 @@ function readAuth() {
   };
 }
 
-// Private route wrapper
 function PrivateRoute({ children }) {
   const token = getToken();
   return token ? children : <Navigate to="/login" replace />;
@@ -36,7 +34,7 @@ export default function App() {
   const navigate = useNavigate();
   const [{ token, user }, setAuth] = useState(readAuth());
 
-  // React to login/logout events
+  // Listen for login/logout
   useEffect(() => {
     const handle = () => setAuth(readAuth());
     const unsubscribe = onAuthChanged(handle);
@@ -75,17 +73,19 @@ export default function App() {
             </Nav.Link>
           </Nav>
 
-          <Nav>
+          <Nav className="align-items-center">
             {token ? (
               <>
-                {user && (
-                  <Navbar.Text className="me-3">
-                                     {" "}
-                    <span className="fw-semibold">{user.name}</span>{" "}
-                    <small className="text-muted">({user.email})</small>
+                {user?.name && (
+                  <Navbar.Text className="me-3 fw-semibold">
+                    {user.name}
                   </Navbar.Text>
                 )}
-                <Button size="sm" variant="outline-light" onClick={handleLogout}>
+                <Button
+                  size="sm"
+                  variant="outline-light"
+                  onClick={handleLogout}
+                >
                   Logout
                 </Button>
               </>
@@ -98,7 +98,7 @@ export default function App() {
         </Container>
       </Navbar>
 
-      {/* Main content */}
+      {/* Routes */}
       <SnackProvider>
         <Container className="mt-4">
           <Routes>
