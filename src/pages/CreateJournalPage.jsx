@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import JournalForm from "../components/JournalForm";
+import JournalForm from "../components/Journal/JournalForm";
 import { getResidents } from "../api/journalService";
 
-export default function CreateJournalPage({ currentUser }) {
+export default function CreateJournalPage({ currentUser, addJournal }) {
   const [residents, setResidents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -27,7 +27,7 @@ export default function CreateJournalPage({ currentUser }) {
   return (
     <div className="max-w-2xl mx-auto p-6">
       <h1 className="text-2xl font-semibold mb-4">Opret journalindgang</h1>
-      <JournalForm residents={residents} currentUser={currentUser} />
+      <JournalForm residents={residents} currentUser={currentUser} addJournal={addJournal}/>
     </div>
   );
 }

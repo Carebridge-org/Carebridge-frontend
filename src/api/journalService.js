@@ -3,7 +3,6 @@ export function getResidents() {
   return new Promise((resolve) => {
     setTimeout(() => {
       resolve([
-        { id: 1, username: "hans", displayName: "Hans Hansen" },
         { id: 2, username: "anna", displayName: "Anna Andersen" },
         { id: 3, username: "peter", displayName: "Peter Petersen" },
       ]);

@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { Form, Button, Row, Col, Alert, Card, ListGroup } from "react-bootstrap";
-import { createJournalEntry } from "../api/journalService";
-import { validateJournal } from "../utils/validation";
-import FileUpload from "./FileUpload";
-import ChecklistEditor from "./ChecklistEditor";
+//import { createJournalEntry } from "../../api/journalService";
+import { validateJournal } from "../../utils/validation";
+import { useNavigate } from "react-router-dom";
 
-export default function JournalForm({ residents, currentUser, initialData }) {
+
+export default function JournalForm({ residents, currentUser, initialData, addJournal }) {
+  const navigate = useNavigate();
+
   const [formData, setFormData] = useState(
     initialData || {
       resident: "",
@@ -13,13 +15,6 @@ export default function JournalForm({ residents, currentUser, initialData }) {
       type: "",
       content: "",
       riskAssessment: "",
-      tags: "",
-      checklistData: [
-        { label: "Medicin", value: "" },
-        { label: "Humør", value: "" },
-        { label: "Smerte", value: "" },
-      ],
-      attachments: [],
     }
   );
 
@@ -36,7 +31,7 @@ export default function JournalForm({ residents, currentUser, initialData }) {
     setFormData((prev) => ({ ...prev, attachments: files }));
   }
 
-  async function handleSubmit(e) {
+  function handleSubmit(e) {
     e.preventDefault();
     setStatus("loading");
 
@@ -48,10 +43,21 @@ export default function JournalForm({ residents, currentUser, initialData }) {
       return;
     }
 
-    try {
-      const payload = { ...formData, author: currentUser.id };
-      await createJournalEntry(payload);
-      setStatus("success");
+    const newJournal = {
+      id: Date.now(),
+      resident: formData.resident,
+      title: formData.title,
+      type: formData.type,
+      content: formData.content,
+      riskAssessment: formData.riskAssessment,
+      createdAt: new Date().toISOString,
+      author: currentUser.displayName,
+    };
+
+    addJournal(prev => [...prev, newJournal]);
+    setStatus("success");
+
+    navigate("/journal-overview");
 
       if (!initialData) {
         setFormData({
@@ -70,11 +76,7 @@ export default function JournalForm({ residents, currentUser, initialData }) {
         });
         setErrors({});
       }
-    } catch (err) {
-      console.error(err);
-      setStatus("error");
-    }
-  }
+    }  
 
   return (
     <Card className="p-4 shadow-sm mx-auto" style={{ maxWidth: "700px" }}>
@@ -163,51 +165,13 @@ export default function JournalForm({ residents, currentUser, initialData }) {
                 )}
               </Form.Group>
             </Col>
-            <Col>
-              <Form.Group>
-                <Form.Label>Tags (max 8)</Form.Label>
-                <Form.Control
-                  type="text"
-                  name="tags"
-                  value={formData.tags}
-                  onChange={handleChange}
-                  placeholder="fx observation, medicin"
-                />
-                {errors.tags && <Form.Text className="text-danger">{errors.tags}</Form.Text>}
-              </Form.Group>
-            </Col>
           </Row>
-
-          {/* --- ChecklistEditor --- */}
-          <ChecklistEditor
-            checklistData={formData.checklistData}
-            onChange={(updated) => setFormData((prev) => ({ ...prev, checklistData: updated }))}
-          />
-
-          {/* --- FileUpload --- */}
-          <FileUpload files={formData.attachments} setFiles={handleFiles} />
 
           {/* Submit */}
           <Button variant="primary" type="submit" disabled={status === "loading"}>
             {status === "loading" ? "Gemmer..." : "Gem"}
           </Button>
         </Form>
-
-        {/* Vedhæftede filer preview */}
-        {formData.attachments.length > 0 && (
-          <Card className="mt-3">
-            <Card.Body>
-              <Card.Title>Vedhæftede filer</Card.Title>
-              <ListGroup variant="flush">
-                {formData.attachments.map((file, idx) => (
-                  <ListGroup.Item key={idx}>
-                    {file.name} ({Math.round(file.size / 1024)} KB)
-                  </ListGroup.Item>
-                ))}
-              </ListGroup>
-            </Card.Body>
-          </Card>
-        )}
       </Card.Body>
     </Card>
   );

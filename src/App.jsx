@@ -1,11 +1,14 @@
 import { Container, Nav, Navbar } from "react-bootstrap";
 import { Routes, Route, Link } from "react-router-dom";
+import { useState } from "react"
 
 import Home from "./pages/Home";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
 import CreateJournalPage from "./pages/CreateJournalPage";
 import ProtectedRoute from "./components/ProtectedRoute"; 
+import JournalOverviewPage from "./pages/JournalOverviewPage";
+import ShowJournalDetails from "./components/Journal/ShowJournalDetails";
 
 function App() {
   // Mock currentUser til test
@@ -16,6 +19,16 @@ function App() {
     roles: ["CareWorker"], 
     createdAt: "2025-11-03",
   };
+
+  const [journals, setJournals] = useState([
+    {
+      id: 1,
+      title: "Første journalindgang",
+      content: "Dette er en testjournalindgang.",
+      createdAt: "2025, 14/11",
+    }
+  ]);
+
 
   return (
     <>
@@ -48,6 +61,9 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/about" element={<About />} />
           <Route path="/contact" element={<Contact />} />
+          <Route path="/journal-overview" element={<JournalOverviewPage journals={journals} />} />
+          <Route path="/journal/:journalId" element={<ShowJournalDetails journals={journals} />} />
+
 
           {/* Beskyttet route */}
           <Route
@@ -57,8 +73,9 @@ function App() {
                 user={mockUser}
                 roles={["CareWorker", "Admin"]}
               >
-                <CreateJournalPage currentUser={mockUser} />
+                <CreateJournalPage currentUser={mockUser} addJournal={setJournals} />
               </ProtectedRoute>
+              
             }
           />
 
