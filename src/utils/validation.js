@@ -1,7 +1,6 @@
 export function validateJournal(formData) {
   const errors = {};
 
-  if (!formData.resident) errors.resident = "Beboer er påkrævet.";
   if (!formData.title) errors.title = "Titel er påkrævet.";
   if (!formData.type) errors.type = "Type er påkrævet.";
   if (!formData.content) errors.content = "Indhold er påkrævet.";
@@ -14,7 +13,7 @@ export function validateJournal(formData) {
     errors.content = "Indhold skal være mindst 5 tegn.";
   }
 
-  const allowedRisks = ["LAV", "MIDDEL", "HØJ"];
+  const allowedRisks = ["LOW", "MEDIUM", "HIGH"];
   if (formData.riskAssessment && !allowedRisks.includes(formData.riskAssessment)) {
     errors.riskAssessment = "Ugyldigt risikoniveau.";
   }
