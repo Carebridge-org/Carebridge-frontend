@@ -5,7 +5,8 @@ import Home from './pages/Home'
 import About from './pages/About'
 import Contact from './pages/Contact'
 import Login from "./pages/(auth)/Login"
-import Register from "./pages/(auth)/Register"
+import CreateUser from "./pages/(worker)/CreateUser"
+import LinkResidents from "./pages/(worker)/LinkResidents"
 function App() {
     return (
         <>
@@ -29,7 +30,11 @@ function App() {
                     <Route path="/contact" element={<Contact />} />
                     {/* Auth */}
                     <Route path="/auth/login" element={<Login />} />
-                    <Route path="/auth/register" element={<Register />} />
+    
+
+                    {/* Medarbejder */}
+                    <Route path='/admin/create-user' element={<CreateUser />} />
+                    <Route path='/admin/link' element={<LinkResidents />} />
                 </Routes>
             </Container>
         </>

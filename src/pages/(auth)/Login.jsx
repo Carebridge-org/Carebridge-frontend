@@ -3,7 +3,7 @@ import { Form, Button, Alert, Card, Container } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 
 export default function Login() {
-    const [email, setEmail] = useState("");
+    const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState(null);
     const navigate = useNavigate();
@@ -14,7 +14,7 @@ export default function Login() {
 
         try {
             const formData = new FormData();
-            formData.append("email", email);
+            formData.append("username", username);
             formData.append("password", password);
 
             const res = await fetch("http://localhost:7070/auth/login", {
@@ -53,12 +53,12 @@ export default function Login() {
 
                     <Form onSubmit={handleLogin}>
                         <Form.Group className="mb-3">
-                            <Form.Label>Email</Form.Label>
+                            <Form.Label>Username</Form.Label>
                             <Form.Control
-                                type="email"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                placeholder="Enter email"
+                                type="text"
+                                value={username}
+                                onChange={(e) => setUsername(e.target.value)}
+                                placeholder="Enter username"
                                 required
                             />
                         </Form.Group>
