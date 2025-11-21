@@ -10,18 +10,40 @@ export default function LinkResidents() {
     const [error, setError] = useState(null);
 
     useEffect(() => {
-        fetch("http://localhost:7070/guardians")
-            .then(r => r.json())
-            .then(setGuardians);
+    async function loadData() {
+        const res1 = await fetch("http://localhost:7070/guardians");
+        const guardiansData = await res1.json();
+        setGuardians(guardiansData);
 
-        fetch("http://localhost:7070/residents")
-            .then(r => r.json())
-            .then(setResidents);
+        const res2 = await fetch("http://localhost:7070/residents");
+        let residentsData = await res2.json();
 
+        // Hvis backend ikke har residents endnu → brug mock data
+        if (!Array.isArray(residentsData) || residentsData.length === 0) {
+            residentsData = [
+                {
+                    id: 1,
+                    fullName: "Test Resident 1",
+                    roomNumber: "A-12",
+                    dateOfBirth: "1960-05-14",
+                    medicalConditions: ["Diabetes"],
+                },
+                {
+                    id: 2,
+                    fullName: "Test Resident 2",
+                    roomNumber: "B-04",
+                    dateOfBirth: "1975-10-11",
+                    medicalConditions: [],
+                }
+            ];
+        }
 
+        setResidents(residentsData);
+    }
 
-            console.log(JSON.stringify(guardians))
-    }, []);
+    loadData();
+}, []);
+
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -70,7 +92,7 @@ export default function LinkResidents() {
                     <Form.Check
                         type="checkbox"
                         key={r.id}
-                        label={r.username || r.id}
+                        label={r.fullName || r.roomNumber || ("Resident #" + r.id)}
                         value={r.id}
                         checked={selectedResidents.includes(r.id)}
                         onChange={(e) => {

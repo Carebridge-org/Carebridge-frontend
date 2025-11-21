@@ -85,14 +85,14 @@ export default function CreateUser() {
         <Container className="mt-4">
             <Card className="mx-auto" style={{ maxWidth: "600px" }}>
                 <Card.Body>
-                    <h3 className="text-center mb-4">Create User</h3>
+                    <h3 className="text-center mb-4">Opret Bruger</h3>
 
                     {error && <Alert variant="danger">{error}</Alert>}
-                    {success && <Alert variant="success">User created successfully!</Alert>}
+                    {success && <Alert variant="success">Brugeren er blevet oprettet</Alert>}
 
                     <Form onSubmit={handleSubmit}>
                         <Form.Group className="mb-3">
-                            <Form.Label>Username</Form.Label>
+                            <Form.Label>brugernavn</Form.Label>
                             <Form.Control
                                 type="text"
                                 value={username}
@@ -102,7 +102,7 @@ export default function CreateUser() {
                         </Form.Group>
 
                         <Form.Group className="mb-3">
-                            <Form.Label>Password</Form.Label>
+                            <Form.Label>Adgangskode</Form.Label>
                             <Form.Control
                                 type="password"
                                 value={password}
@@ -112,7 +112,7 @@ export default function CreateUser() {
                         </Form.Group>
 
                         <Form.Group className="mb-3">
-                            <Form.Label>Display Name</Form.Label>
+                            <Form.Label>Fuldenavn</Form.Label>
                             <Form.Control
                                 type="text"
                                 value={displayName}
@@ -121,7 +121,7 @@ export default function CreateUser() {
                         </Form.Group>
 
                         <Form.Group className="mb-3">
-                            <Form.Label>Display Email</Form.Label>
+                            <Form.Label>Email</Form.Label>
                             <Form.Control
                                 type="email"
                                 value={displayEmail}
@@ -130,7 +130,7 @@ export default function CreateUser() {
                         </Form.Group>
 
                         <Form.Group className="mb-3">
-                            <Form.Label>Display Phone</Form.Label>
+                            <Form.Label>Telefonnummer</Form.Label>
                             <Form.Control
                                 type="text"
                                 value={displayPhone}
@@ -139,7 +139,7 @@ export default function CreateUser() {
                         </Form.Group>
 
                         <Form.Group className="mb-3">
-                            <Form.Label>Internal Email</Form.Label>
+                            <Form.Label>Intern Email</Form.Label>
                             <Form.Control
                                 type="email"
                                 value={internalEmail}
@@ -149,7 +149,7 @@ export default function CreateUser() {
                         </Form.Group>
 
                         <Form.Group className="mb-3">
-                            <Form.Label>Internal Phone</Form.Label>
+                            <Form.Label>Intern Telefon</Form.Label>
                             <Form.Control
                                 type="text"
                                 value={internalPhone}
@@ -159,17 +159,16 @@ export default function CreateUser() {
                         </Form.Group>
 
                         <Form.Group className="mb-3">
-                            <Form.Label>Role</Form.Label>
+                            <Form.Label>Rolle</Form.Label>
                             <Form.Select value={role} onChange={(e) => setRole(e.target.value)}>
                                 <option value="ADMIN">Admin</option>
                                 <option value="CAREWORKER">Care Worker</option>
                                 <option value="GUARDIAN">Guardian</option>
-                                <option value="RESIDENT">Resident</option>
                             </Form.Select>
                         </Form.Group>
 
                         <Button variant="primary" type="submit" className="w-100">
-                            Create User
+                            Opret Bruger
                         </Button>
                     </Form>
                 </Card.Body>
