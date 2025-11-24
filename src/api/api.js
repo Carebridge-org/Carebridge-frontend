@@ -49,3 +49,42 @@ export function createJournalEntry(journalId, entry) {
 export function getServerStatus() {
   return apiRequest("/", { method: "GET" });
 }
+
+export async function editJournalEntry(journalId, entryId, data) {
+  const response = await fetch(BASE_URL + `/journals/${journalId}/journal-entries/${entryId}`, {
+    method: "PATCH",
+    headers: {
+        "Content-Type": "application/json",
+    },
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(errorText);
+  }
+
+  return response.json();
+}
+
+export async function getJournalEntry(journalId, entryId) {
+  const response = await fetch(
+    `${BASE_URL}/journals/${journalId}/journal-entries/${entryId}`
+  );
+
+  if (!response.ok) {
+    throw new Error("Kunne ikke hente journal entry");
+  }
+
+  const data = await response.json();
+
+  return {
+    id: data.id,
+    journalId: journalId,
+    title: data.title,
+    entryType: data.entryType,
+    riskAssessment: data.riskAssessment,
+    authorUserId: data.authorUserId, // eller data.author
+    content: data.content,
+  };
+}

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Form, Button, Row, Col, Alert, Card } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
-import { createJournalEntry, getUsers } from "../../api/api";
+import { createJournalEntry, editJournalEntry, getUsers } from "../../api/api";
 import { validateJournal } from "../../utils/validation";
 
 export default function JournalForm({ initialData, addJournal }) {
@@ -10,6 +10,8 @@ export default function JournalForm({ initialData, addJournal }) {
   const [authors, setAuthors] = useState([]);
   const [formData, setFormData] = useState(
     initialData || {
+      id: null,
+      journalId: initialData?.journalId || 1,
       author: "",
       title: "",
       type: "",
@@ -20,7 +22,9 @@ export default function JournalForm({ initialData, addJournal }) {
   const [errors, setErrors] = useState({});
   const [status, setStatus] = useState("idle");
 
-  // Hent authors fra backend
+  const isEditMode = Boolean(initialData?.id);
+
+  // --- Hent authors fra backend ---
   useEffect(() => {
     async function fetchAuthors() {
       try {
@@ -42,37 +46,44 @@ export default function JournalForm({ initialData, addJournal }) {
     e.preventDefault();
     setStatus("loading");
 
-    const validationErrors = validateJournal(formData);
-    setErrors(validationErrors);
+    // Kun validér content i edit-mode
+    const validationErrors = isEditMode
+      ? validateJournal({ 
+        ...formData,
+        title: formData.title,
+        type: formData.type,
+        riskAssessment: formData.riskAssessment,
+       })
+      : validateJournal(formData);
 
+    setErrors(validationErrors);
     if (Object.keys(validationErrors).length > 0) {
       setStatus("error");
       return;
     }
 
     try {
-      // Hardcoded journalId = 1 (test)
-      const payload = {
-        journalId: 1,
-        title: formData.title,
-        content: formData.content,
-        entryType: formData.type,
-        riskAssessment: formData.riskAssessment,
-        authorUserId: Number(formData.author),
-      };
-
-      console.log("🔍 Payload der sendes:", payload);
-
-      const newEntry = await createJournalEntry(1, payload);
-
-      if (addJournal) {
-        addJournal((prev) => [...prev, newEntry]);
+      if (isEditMode) {
+        // --- Kun overskriv content ---
+        const payload = { content: formData.content };
+        await editJournalEntry(formData.journalId, formData.id, payload);
+      } else {
+        // --- Opret ny journal entry ---
+        const payload = {
+          title: formData.title,
+          content: formData.content,
+          entryType: formData.type,
+          riskAssessment: formData.riskAssessment,
+          authorUserId: Number(formData.author),
+        };
+        const newEntry = await createJournalEntry(formData.journalId, payload);
+        if (addJournal) addJournal((prev) => [...prev, newEntry]);
       }
 
       setStatus("success");
       navigate("/journal-overview");
     } catch (err) {
-      console.error("Journal oprettelse fejlede:", err);
+      console.error("Journal oprettelse/redigering fejlede:", err);
       setStatus("error");
     }
   }
@@ -80,28 +91,34 @@ export default function JournalForm({ initialData, addJournal }) {
   return (
     <Card className="p-4 shadow-sm mx-auto" style={{ maxWidth: "700px" }}>
       <Card.Body>
-        <Card.Title>{initialData ? "Rediger journalindgang" : "Opret journalindgang"}</Card.Title>
+        <Card.Title>{isEditMode ? "Rediger journalindgang" : "Opret journalindgang"}</Card.Title>
 
         {status === "success" && <Alert variant="success">Journal gemt!</Alert>}
         {status === "error" && <Alert variant="danger">Der opstod en fejl.</Alert>}
 
         <Form onSubmit={handleSubmit}>
+          {/* Titel */}
+          <Form.Group className="mb-3">
+            <Form.Label>Titel</Form.Label>
+            <Form.Control
+              type="text"
+              name="title"
+              value={formData.title}
+              onChange={handleChange}
+              disabled={isEditMode} // lås i edit-mode
+            />
+            {errors.title && <Form.Text className="text-danger">{errors.title}</Form.Text>}
+          </Form.Group>
 
-        <Form.Group className="mb-3">
-  <Form.Label>Titel</Form.Label>
-  <Form.Control
-    type="text"
-    name="title"
-    value={formData.title}
-    onChange={handleChange}
-  />
-  {errors.title && <Form.Text className="text-danger">{errors.title}</Form.Text>}
-</Form.Group>
-
-          {/* Authors */}
+          {/* Author */}
           <Form.Group className="mb-3">
             <Form.Label>Forfatter</Form.Label>
-            <Form.Select name="author" value={formData.author} onChange={handleChange}>
+            <Form.Select
+              name="author"
+              value={formData.author}
+              onChange={handleChange}
+              disabled={isEditMode} // lås i edit-mode
+            >
               <option value="">Vælg author</option>
               {authors.map((a) => (
                 <option key={a.id} value={a.id}>{a.name}</option>
@@ -115,7 +132,12 @@ export default function JournalForm({ initialData, addJournal }) {
             <Col>
               <Form.Group>
                 <Form.Label>Type</Form.Label>
-                <Form.Select name="type" value={formData.type} onChange={handleChange}>
+                <Form.Select
+                  name="type"
+                  value={formData.type}
+                  onChange={handleChange}
+                  disabled={isEditMode} // lås i edit-mode
+                >
                   <option value="">Vælg type</option>
                   <option value="DAILY">Daily</option>
                   <option value="NOTE">Note</option>
@@ -147,6 +169,7 @@ export default function JournalForm({ initialData, addJournal }) {
               name="riskAssessment"
               value={formData.riskAssessment}
               onChange={handleChange}
+              disabled={isEditMode} // lås i edit-mode
             >
               <option value="">Vælg niveau</option>
               <option value="LOW">Lav</option>

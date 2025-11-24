@@ -9,7 +9,7 @@ import Contact from "./pages/Contact";
 import CreateJournalPage from "./pages/CreateJournalPage";
 import JournalOverviewPage from "./pages/JournalOverviewPage";
 import ShowJournalDetails from "./components/Journal/ShowJournalDetails";
-
+import EditJournalEntryPage from "./pages/EditJournalEntryPage";
 function App() {
   // --- Hold alle journal entries her ---
   const [journals, setJournals] = useState([]);
@@ -35,6 +35,8 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/about" element={<About />} />
           <Route path="/contact" element={<Contact />} />
+          <Route path="/journals/:journalId/entries/:entryId/edit" element={<EditJournalEntryPage />} />
+
 
           {/* Journal Pages */}
           <Route
