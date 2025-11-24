@@ -9,6 +9,7 @@ import CalendarPage from "./pages/CalendarPage.jsx";
 import SnackProvider from "./components/SnackProvider.jsx";
 import Login from "./pages/Login.jsx";
 import NotFound from "./pages/NotFound.jsx";
+import ResidentOverview from "./pages/residentOverview.jsx";
 
 import {
   getToken,
@@ -62,12 +63,19 @@ export default function App() {
             <Nav.Link as={Link} to="/">
               Dashboard
             </Nav.Link>
+
             <Nav.Link as={Link} to="/calendar">
               Calendar
             </Nav.Link>
+
+            <Nav.Link as={Link} to="/residentOverview">
+              Resident Overview
+            </Nav.Link>
+
             <Nav.Link as={Link} to="/about">
               About
             </Nav.Link>
+
             <Nav.Link as={Link} to="/contact">
               Contact
             </Nav.Link>
@@ -103,6 +111,7 @@ export default function App() {
         <Container className="mt-4">
           <Routes>
             <Route path="/" element={<Home />} />
+
             <Route
               path="/calendar"
               element={
@@ -111,9 +120,20 @@ export default function App() {
                 </PrivateRoute>
               }
             />
+
+            <Route
+              path="/residentOverview"
+              element={
+                <PrivateRoute>
+                  <ResidentOverview />
+                </PrivateRoute>
+              }
+            />
+
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/login" element={<Login />} />
+
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Container>
