@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Container, Nav, Navbar } from "react-bootstrap";
+import { useState, useEffect } from "react";
+import { Container, Nav, Navbar, Button } from "react-bootstrap";
 import { Routes, Route, Link } from "react-router-dom";
 
 import Home from "./pages/Home";
@@ -14,19 +14,55 @@ function App() {
   // --- Hold alle journal entries her ---
   const [journals, setJournals] = useState([]);
 
+  // --- Theme state: default dark ---
+  const [theme, setTheme] = useState("dark");
+
+  // --- Opdater body klasser ved tema skift ---
+  useEffect(() => {
+    document.body.className =
+      theme === "dark" ? "bg-dark text-light" : "bg-light text-dark";
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme((prev) => (prev === "dark" ? "light" : "dark"));
+  };
+
   return (
     <>
       {/* Navigation */}
-      <Navbar bg="dark" variant="dark" expand="lg">
+      <Navbar
+        bg={theme === "dark" ? "dark" : "light"}
+        variant={theme === "dark" ? "dark" : "light"}
+        expand="lg"
+      >
         <Container>
-          <Navbar.Brand as={Link} to="/">Min App</Navbar.Brand>
+          <Navbar.Brand as={Link} to="/">
+            Min App
+          </Navbar.Brand>
           <Nav className="me-auto">
-            <Nav.Link as={Link} to="/">Home</Nav.Link>
-            <Nav.Link as={Link} to="/about">About</Nav.Link>
-            <Nav.Link as={Link} to="/contact">Contact</Nav.Link>
-            <Nav.Link as={Link} to="/create-journal">Opret Journal Entry</Nav.Link>
-            <Nav.Link as={Link} to="/journal-overview">Journal Oversigt</Nav.Link>
+            <Nav.Link as={Link} to="/">
+              Home
+            </Nav.Link>
+            <Nav.Link as={Link} to="/about">
+              About
+            </Nav.Link>
+            <Nav.Link as={Link} to="/contact">
+              Contact
+            </Nav.Link>
+            <Nav.Link as={Link} to="/create-journal">
+              Opret Journal Entry
+            </Nav.Link>
+            <Nav.Link as={Link} to="/journal-overview">
+              Journal Oversigt
+            </Nav.Link>
           </Nav>
+          {/* Theme toggle knap */}
+          <Button
+            variant={theme === "dark" ? "light" : "dark"}
+            onClick={toggleTheme}
+          >
+            {theme === "dark" ? "Light Mode" : "Dark Mode"}
+          </Button>
         </Container>
       </Navbar>
 
