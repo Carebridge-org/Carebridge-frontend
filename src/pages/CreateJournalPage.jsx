@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import JournalForm from "../components/Journal/JournalForm";
-import { getUsers } from "../api/api";
+import api from "../services/api";
 
 export default function CreateJournalPage({ addJournal }) {
   const [residents, setResidents] = useState([]);
@@ -10,10 +10,14 @@ export default function CreateJournalPage({ addJournal }) {
   useEffect(() => {
     async function fetchUsers() {
       try {
-        const data = await getUsers(); // hent authors fra backend
-        setResidents(data);
+        const res = await api.get("/users"); // protected, uses JWT
+        setResidents(res.data);
       } catch (err) {
-        setError(`Kunne ikke hente beboerliste: ${err.message}`);
+        setError(
+          `Kunne ikke hente beboerliste: ${
+            err.response?.data?.message || err.message
+          }`
+        );
       } finally {
         setLoading(false);
       }

@@ -1,62 +1,30 @@
-const BASE_URL = "http://localhost:7070";
-
-
-async function apiRequest(endpoint, options = {}) {
-  const config = {
-    ...options,
-    headers: {
-      ...(options.headers || {}),
-    },
-  };
-
-  const res = await fetch(BASE_URL + endpoint, config);
-
-  if (!res.ok) {
-    const errorText = await res.text();
-    throw new Error(errorText || "API fejl");
-  }
-
-  try {
-    return await res.json();
-  } catch {
-    return null;
-  }
-}
+import api from "../services/api";
 
 // --- Brugere ---
-export function getUsers() {
-  return apiRequest("/users", { method: "GET" });
+export async function getUsers() {
+  const res = await api.get("/users");
+  return res.data;
 }
 
 // --- Opret bruger ---
-export function createUser(user) {
-  return apiRequest("/users", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(user),
-  });
+export async function createUser(user) {
+  const res = await api.post("/users", user);
+  return res.data;
 }
 
 // --- Journal entries ---
-export function createJournalEntry(journalId, entry) {
-  return apiRequest(`/journals/${journalId}/journal-entries`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(entry),
-  });
+export async function createJournalEntry(journalId, entry) {
+  const res = await api.post(`/journals/${journalId}/journal-entries`, entry);
+  return res.data;
 }
 
-export function createResident(resident) {
-  return apiRequest("/residents", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(resident),
-  });
+export async function createResident(resident) {
+  const res = await api.post("/residents", resident);
+  return res.data;
 }
 
 // --- Server status ---
-export function getServerStatus() {
-  return apiRequest("/", { method: "GET" });
+export async function getServerStatus() {
+  const res = await api.get("/");
+  return res.data;
 }
-
-
