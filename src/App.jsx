@@ -10,6 +10,10 @@ import SnackProvider from "./components/SnackProvider.jsx";
 import Login from "./pages/Login.jsx";
 import NotFound from "./pages/NotFound.jsx";
 import ResidentOverview from "./pages/residentOverview.jsx";
+import CreateJournalPage from "./pages/CreateJournalPage";
+import JournalOverviewPage from "./pages/JournalOverviewPage";
+import ShowJournalDetails from "./components/Journal/ShowJournalDetails";
+import CreateResidentPage from "./pages/CreateResidentPage";
 
 import {
   getToken,
@@ -34,6 +38,7 @@ function PrivateRoute({ children }) {
 export default function App() {
   const navigate = useNavigate();
   const [{ token, user }, setAuth] = useState(readAuth());
+  const [journals, setJournals] = useState([]);
 
   // Listen for login/logout
   useEffect(() => {
@@ -79,6 +84,18 @@ export default function App() {
             <Nav.Link as={Link} to="/contact">
               Contact
             </Nav.Link>
+
+            <Nav.Link as={Link} to="/create-journal">
+              Opret Journal Entry
+                </Nav.Link>
+
+            <Nav.Link as={Link} to="/journal-overview">
+              Journal Oversigt
+                </Nav.Link>
+
+            <Nav.Link as={Link} to="/create-resident">
+              Opret Resident
+                </Nav.Link>
           </Nav>
 
           <Nav className="align-items-center">
@@ -129,10 +146,25 @@ export default function App() {
                 </PrivateRoute>
               }
             />
+            <Route path="/create-resident" element={<CreateResidentPage />} />
 
+          {/* Journal Pages */}
+          <Route
+            path="/create-journal"
+            element={<CreateJournalPage addJournal={setJournals} />}
+          />
+          <Route
+            path="/journal-overview"
+            element={<JournalOverviewPage journals={journals} />}
+          />
+          <Route
+            path="/journal/:journalId"
+            element={<ShowJournalDetails journals={journals} />}
+          />
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/login" element={<Login />} />
+            
 
             <Route path="*" element={<NotFound />} />
           </Routes>
