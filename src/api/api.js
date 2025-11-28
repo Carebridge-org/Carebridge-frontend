@@ -19,7 +19,7 @@ export async function createJournalEntry(journalId, entry) {
 }
 
 export async function createResident(resident) {
-  const res = await api.post("/residents", resident);
+  const res = await api.post("/residents/create", resident);
   return res.data;
 }
 

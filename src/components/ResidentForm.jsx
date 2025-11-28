@@ -6,7 +6,7 @@ export default function ResidentForm({ onSuccess }) {
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
-    cprNumber: "",
+    cprNr: "",
     userId: "",
   });
   const [users, setUsers] = useState([]);
@@ -36,10 +36,10 @@ export default function ResidentForm({ onSuccess }) {
     if (!data.firstName.trim()) errors.firstName = "Fornavn er påkrævet.";
     if (!data.lastName.trim()) errors.lastName = "Efternavn er påkrævet.";
 
-    if (!data.cprNumber.trim()) {
-    errors.cprNumber = "CPR-nummer er påkrævet.";
-  } else if (!/^\d{6}-\d{4}$/.test(data.cprNumber)) {
-    errors.cprNumber = "CPR skal være i formatet 123456-1234.";
+    if (!data.cprNr.trim()) {
+    errors.cprNr = "CPR-nummer er påkrævet.";
+  } else if (!/^\d{6}-\d{4}$/.test(data.cprNr)) {
+    errors.cprNr = "CPR skal være i formatet 123456-1234.";
   }
         
     if (!data.userId) errors.userId = "Du skal vælge en bruger.";
@@ -99,11 +99,11 @@ export default function ResidentForm({ onSuccess }) {
             <Form.Label>CPR-nummer</Form.Label>
             <Form.Control
               type="text"
-              name="cprNumber"
-              value={formData.cprNumber}
+              name="cprNr"
+              value={formData.cprNr}
               onChange={handleChange}
             />
-            {errors.cprNumber && <Form.Text className="text-danger">{errors.cprNumber}</Form.Text>}
+            {errors.cprNr && <Form.Text className="text-danger">{errors.cprNr}</Form.Text>}
           </Form.Group>
 
           <Form.Group className="mb-3">

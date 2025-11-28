@@ -38,22 +38,24 @@ export default function JournalForm({ initialData, addJournal }) {
     setFormData((prev) => ({ ...prev, [name]: value }));
   }
 
-  async function handleSubmit(e) {
+    async function handleSubmit(e) {
     e.preventDefault();
+    console.log("▶ handleSubmit called with", formData);
     setStatus("loading");
 
     const validationErrors = validateJournal(formData);
+    console.log("▶ validationErrors", validationErrors);
     setErrors(validationErrors);
 
     if (Object.keys(validationErrors).length > 0) {
+      console.log("▶ validation failed, aborting submit");
       setStatus("error");
       return;
     }
 
     try {
-      // Hardcoded journalId = 1 (test)
       const payload = {
-        journalId: 1,
+        journalId: formData.journalId || 2,
         title: formData.title,
         content: formData.content,
         entryType: formData.type,
@@ -61,9 +63,10 @@ export default function JournalForm({ initialData, addJournal }) {
         authorUserId: Number(formData.author),
       };
 
-      console.log("🔍 Payload der sendes:", payload);
+      console.log("▶ Sending payload to createJournalEntry", payload);
 
-      const newEntry = await createJournalEntry(1, payload);
+      const newEntry = await createJournalEntry(formData.journalId || 2, payload);
+      console.log("▶ createJournalEntry response", newEntry);
 
       if (addJournal) {
         addJournal((prev) => [...prev, newEntry]);
@@ -72,7 +75,7 @@ export default function JournalForm({ initialData, addJournal }) {
       setStatus("success");
       navigate("/journal-overview");
     } catch (err) {
-      console.error("Journal oprettelse fejlede:", err);
+      console.error("Journal oprettelse fejlede:", err.response?.data || err);
       setStatus("error");
     }
   }

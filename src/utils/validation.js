@@ -51,14 +51,14 @@ export function validateJournal(formData) {
     });
   }
 
-  if (formData.cprNumber) {
+  /*if (formData.cprNumber) {
     const cprRegex = /^\d{6}-?\d{4}$/;
     if (!cprRegex.test(formData.cprNumber)) {
       errors.cprNumber = "Ugyldigt CPR-nummer format.";
     }
   } else {
     errors.cprNumber = "CPR-nummer er påkrævet.";
-  }
+  }*/
 
   return errors;
 }
