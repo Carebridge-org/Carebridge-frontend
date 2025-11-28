@@ -13,33 +13,41 @@ export default function Login() {
         setError(null);
 
         try {
-            const formData = new FormData();
-            formData.append("username", username);
-            formData.append("password", password);
-
-            const res = await fetch("http://localhost:7070/auth/login", {
+            // Vi sender JSON nu i stedet for FormData
+            const res = await fetch("http://localhost:7070/api/auth/login", {
                 method: "POST",
-                body: formData,
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    email: username,  // din state for username/email
+                    password: password, // din state for password
+                }),
             });
 
             const data = await res.json();
 
             if (!res.ok) {
-                setError(data.error || "Login failed");
+                setError(data.msg || "Login failed"); // msg er det vi får fra backend
                 return;
             }
 
-            // Gem token og user i localStorage
-            localStorage.setItem("token", data.token);
-            localStorage.setItem("user", JSON.stringify(data.user));
+            // Gem token og user info i localStorage
+            localStorage.setItem("jwt_token", data.token);
+            localStorage.setItem("user", JSON.stringify({
+                email: data.email,
+                role: data.role,
+            }));
 
-            // Gå til forsiden (eller dashboard)
+            // Naviger til forsiden (eller dashboard)
             navigate("/");
 
         } catch (err) {
+            console.error(err);
             setError("Network error");
         }
     };
+
 
     return (
         <Container

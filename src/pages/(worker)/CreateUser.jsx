@@ -29,44 +29,52 @@ export default function CreateUser() {
         setError(null);
         setSuccess(false);
 
-        const token = localStorage.getItem("token"); // hent token fra localStorage
+        const token = localStorage.getItem("jwt_token"); // hent token fra localStorage
         if (!token) {
             setError("Not authenticated");
             return;
         }
 
         try {
+            // Match backend DTO: name, email, password, display/internal fields, role
             const body = {
-                username,
+                name: displayName || username,          // displayName eller fallback til username
+                email: displayEmail || internalEmail || username,
                 password,
-                displayName,
-                displayEmail,
-                displayPhone,
-                internalEmail,
-                internalPhone,
-                role
+                displayName: displayName || username,
+                displayEmail: displayEmail || internalEmail || username,
+                displayPhone: displayPhone || "",
+                internalEmail: internalEmail || "",
+                internalPhone: internalPhone || "",
+                role: role
             };
 
-            const res = await fetch("http://localhost:7070/users", {
+
+            console.log("JWT token:", token);
+
+            const res = await fetch("http://localhost:7070/api/auth/register", {
                 method: "POST",
-                headers: { "Content-Type": "application/json", "Authorization": "Bearer " + token },
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": "Bearer " + token
+                },
                 body: JSON.stringify(body),
             });
 
             const data = await res.json();
 
             if (!res.ok) {
-                setError(data.error || "Failed to create user");
+                // Tjek for valideringsfejl eller duplicates
+                setError(data.msg || "Failed to create user");
                 return;
             }
 
             setSuccess(true);
 
+            // Download JSON med brugerdata (optional)
+            handleDownload(body, `${body.name.replace(/\s+/g, "_")}_user.json`);
 
-            // Download JSON fil med brugerdata
-            handleDownload(body, `${username}_user.json`);
-
-            // Reset form (optional)
+            // Reset form
             setUsername("");
             setPassword("");
             setDisplayName("");
@@ -77,9 +85,11 @@ export default function CreateUser() {
             setRole("CAREWORKER");
 
         } catch (err) {
+            console.error(err);
             setError("Network error");
         }
     };
+
 
     return (
         <Container className="mt-4">
@@ -164,6 +174,7 @@ export default function CreateUser() {
                                 <option value="ADMIN">Admin</option>
                                 <option value="CAREWORKER">Care Worker</option>
                                 <option value="GUARDIAN">Guardian</option>
+                                <option value="RESIDENT">Resident</option>
                             </Form.Select>
                         </Form.Group>
 
