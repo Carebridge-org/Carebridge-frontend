@@ -1,5 +1,6 @@
 const BASE_URL = "http://localhost:7070";
 
+
 async function apiRequest(endpoint, options = {}) {
   const config = {
     ...options,
@@ -45,7 +46,17 @@ export function createJournalEntry(journalId, entry) {
   });
 }
 
+export function createResident(resident) {
+  return apiRequest("/residents", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(resident),
+  });
+}
+
 // --- Server status ---
 export function getServerStatus() {
   return apiRequest("/", { method: "GET" });
 }
+
+
