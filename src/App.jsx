@@ -9,6 +9,7 @@ import Contact from "./pages/Contact";
 import CreateJournalPage from "./pages/CreateJournalPage";
 import JournalOverviewPage from "./pages/JournalOverviewPage";
 import ShowJournalDetails from "./components/Journal/ShowJournalDetails";
+import CreateResidentPage from "./pages/CreateResidentPage";
 
 function App() {
   // --- Hold alle journal entries her ---
@@ -26,6 +27,8 @@ function App() {
             <Nav.Link as={Link} to="/contact">Contact</Nav.Link>
             <Nav.Link as={Link} to="/create-journal">Opret Journal Entry</Nav.Link>
             <Nav.Link as={Link} to="/journal-overview">Journal Oversigt</Nav.Link>
+            <Nav.Link as={Link} to="/create-resident">Opret Resident</Nav.Link>
+
           </Nav>
         </Container>
       </Navbar>
@@ -35,6 +38,7 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/about" element={<About />} />
           <Route path="/contact" element={<Contact />} />
+          <Route path="/create-resident" element={<CreateResidentPage />} />
 
           {/* Journal Pages */}
           <Route
