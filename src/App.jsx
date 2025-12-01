@@ -16,6 +16,7 @@ import ShowJournalDetails from "./components/Journal/ShowJournalDetails";
 import CreateResidentPage from "./pages/CreateResidentPage";
 import CreateUser from "./pages/(worker)/CreateUser"
 import LinkResidets from "./pages/(worker)/LinkResidents"
+import { getResidents } from "./api/api";
 
 import {
   getToken,
@@ -42,6 +43,11 @@ export default function App() {
   const [{ token, user }, setAuth] = useState(readAuth());
   const [journals, setJournals] = useState([]);
 
+  // NY STATE TIL RESIDENTS
+  const [residents, setResidents] = useState([]);
+  const [residentsLoading, setResidentsLoading] = useState(false);
+  const [residentsError, setResidentsError] = useState(null);
+
   // Listen for login/logout
   useEffect(() => {
     const handle = () => setAuth(readAuth());
@@ -51,6 +57,27 @@ export default function App() {
       unsubscribe();
       window.removeEventListener("storage", handle);
     };
+  }, []);
+
+  // HENT RESIDENTS FRA API (SAMME PRINCIP SOM JOURNALS KUNNE HAVE)
+  useEffect(() => {
+    async function fetchResidents() {
+      try {
+        setResidentsLoading(true);
+        setResidentsError(null);
+
+        // antager at getResidents() returnerer et array
+        const data = await getResidents();
+        setResidents(Array.isArray(data) ? data : []);
+      } catch (err) {
+        console.error("Fejl ved hentning af residents:", err);
+        setResidentsError("Kunne ikke hente residents");
+      } finally {
+        setResidentsLoading(false);
+      }
+    }
+
+    fetchResidents();
   }, []);
 
   const handleLogout = () => {
@@ -145,6 +172,24 @@ export default function App() {
                 </PrivateRoute>
               }
             />
+
+                        {/* RESIDENT OVERVIEW LIGNER JOURNAL-OVERVIEW */}
+            <Route
+              path="/residentOverview"
+              element={
+                <PrivateRoute>
+                  {residentsLoading ? (
+                    <p>Henter residents...</p>
+                  ) : residentsError ? (
+                    <p className="text-danger">{residentsError}</p>
+                  ) : (
+                    <ResidentOverview residents={residents} />
+                  )}
+                </PrivateRoute>
+              }
+            />
+
+            <Route path="/create-resident" element={<CreateResidentPage />} />
 
             <Route
               path="/residentOverview"

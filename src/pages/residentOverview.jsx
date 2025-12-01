@@ -1,33 +1,33 @@
 // src/pages/residentOverview.jsx
-import { Card } from "react-bootstrap";
+import { useMemo } from "react";
+import ResidentList from "../components/Resident/ResidentList";
 
-export default function ResidentOverview() {
-  // Hardcoded resident for now
-  const resident = {
-    fullName: "Anna Hansen",
-    cpr: "120394-1234",
-    department: "Demensafsnit A, 2. sal",
-  };
+export default function ResidentOverview({ residents }) {
+  // Midlertidige data hvis der ikke kommer noget udefra:
+  const fallbackResidents = useMemo(
+    () => [
+      {
+        id: 1,
+        fullName: "Anna Hansen",
+        cpr: "120394-1234",
+        department: "Demensafsnit A, 2. sal",
+      },
+      {
+        id: 2,
+        fullName: "Peter Jensen",
+        cpr: "050180-5678",
+        department: "Somatisk, 1. sal",
+      },
+    ],
+    []
+  );
+
+  const list = residents && residents.length ? residents : fallbackResidents;
 
   return (
     <div>
       <h1 className="mb-4">Resident overview</h1>
-
-      <Card>
-        <Card.Body>
-          <Card.Title className="mb-3">
-            {resident.fullName}
-          </Card.Title>
-
-          <div className="mb-2">
-            <strong>CPR-no.:</strong> {resident.cpr}
-          </div>
-
-          <div className="mb-2">
-            <strong>Department:</strong> {resident.department}
-          </div>
-        </Card.Body>
-      </Card>
+      <ResidentList residents={list} />
     </div>
   );
 }

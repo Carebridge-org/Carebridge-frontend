@@ -12,7 +12,7 @@ export default function ShowJournalDetails({ journals }) {
       <Card.Body>
         <Card.Title>{journal.title}</Card.Title>
         <Card.Subtitle className="mb-2 text-muted">
-          {journal.createdAt} | Beboer: {journal.resident|| "Ukendt"}
+          {journal.createdAt} | Beboer: {journal.resident || "Ukendt"}
         </Card.Subtitle>
         <Card.Text>
           <strong>Type:</strong> {journal.type || "-"} <br />

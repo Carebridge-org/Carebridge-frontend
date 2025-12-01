@@ -23,8 +23,15 @@ export async function createResident(resident) {
   return res.data;
 }
 
+export async function getResidents() {
+  const res = await api.get("/residents/all");
+  console.log("residents response:", res.data);
+  return res.data; 
+}
+
 // --- Server status ---
 export async function getServerStatus() {
   const res = await api.get("/");
   return res.data;
 }
+
