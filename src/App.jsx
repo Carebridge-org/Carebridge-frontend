@@ -14,6 +14,8 @@ import CreateJournalPage from "./pages/CreateJournalPage";
 import JournalOverviewPage from "./pages/JournalOverviewPage";
 import ShowJournalDetails from "./components/Journal/ShowJournalDetails";
 import CreateResidentPage from "./pages/CreateResidentPage";
+import CreateUser from "./pages/(worker)/CreateUser"
+import LinkResidets from "./pages/(worker)/LinkResidents"
 
 import {
   getToken,
@@ -96,6 +98,10 @@ export default function App() {
             <Nav.Link as={Link} to="/create-resident">
               Opret Resident
                 </Nav.Link> 
+            
+            <Nav.Link as={Link} to="/admin/create-user">
+              Opret Bruger
+            </Nav.Link>
           </Nav>
 
           <Nav className="align-items-center">
@@ -122,6 +128,8 @@ export default function App() {
           </Nav>
         </Container>
       </Navbar>
+
+
 
       {/* Routes */}
       <SnackProvider>
@@ -163,6 +171,7 @@ export default function App() {
           />
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
+            <Route path='/admin/create-user' element={<CreateUser />} />
             <Route path="/login" element={<Login />} />
             
 
