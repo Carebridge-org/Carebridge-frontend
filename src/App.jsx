@@ -95,7 +95,7 @@ export default function App() {
 
             <Nav.Link as={Link} to="/create-resident">
               Opret Resident
-                </Nav.Link>
+                </Nav.Link> 
           </Nav>
 
           <Nav className="align-items-center">
