@@ -30,14 +30,31 @@ function readAuth() {
   };
 }
 
-function PrivateRoute({ children }) {
-  const token = getToken();
-  return token ? children : <Navigate to="/login" replace />;
+function PrivateRoute({ children, allowedRoles }) {
+  const { token, user } = readAuth(); // Hent token og user
+  
+  // 1. Tjek om brugeren er logget ind
+  if (!token) {
+    return <Navigate to="/login" replace />;
+  }
+
+  // 2. Tjek rollen (hvis allowedRoles er specificeret)
+  if (allowedRoles && user?.role && !allowedRoles.includes(user.role)) {
+    // Hvis rollen IKKE er i listen over tilladte roller
+    console.warn(`Adgang nægtet: Bruger med rolle '${user.role}' forsøgte at tilgå en beskyttet rute.`);
+    // Omdiriger til dashboardet eller en 'Adgang Nægtet'-side
+    return <Navigate to="/" replace />; 
+  }
+  
+  // Hvis logget ind og rollen er tilladt, vis children
+  return children;
 }
 
 export default function App() {
   const navigate = useNavigate();
   const [{ token, user }, setAuth] = useState(readAuth());
+  const isAdmin = user?.role === "ADMIN";
+
   const [journals, setJournals] = useState([]);
 
   // Listen for login/logout
@@ -77,14 +94,6 @@ export default function App() {
               Resident Overview
             </Nav.Link>
 
-            <Nav.Link as={Link} to="/about">
-              About
-            </Nav.Link>
-
-            <Nav.Link as={Link} to="/contact">
-              Contact
-            </Nav.Link>
-
             <Nav.Link as={Link} to="/create-journal">
               Opret Journal Entry
                 </Nav.Link>
@@ -93,9 +102,14 @@ export default function App() {
               Journal Oversigt
                 </Nav.Link>
 
+
+            {isAdmin && (
+              <>
             <Nav.Link as={Link} to="/create-resident">
               Opret Resident
-                </Nav.Link> 
+                </Nav.Link>
+                </>
+            )} 
           </Nav>
 
           <Nav className="align-items-center">
@@ -146,7 +160,9 @@ export default function App() {
                 </PrivateRoute>
               }
             />
-            <Route path="/create-resident" element={<CreateResidentPage />} />
+            <Route path="/create-resident" element={<PrivateRoute allowedRoles={["ADMIN"]}> {/* <-- Tjekker for Admin */}
+            <CreateResidentPage />
+            </PrivateRoute>} />
 
           {/* Journal Pages */}
           <Route
