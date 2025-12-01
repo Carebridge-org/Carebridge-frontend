@@ -33,6 +33,7 @@ export async function login({ email, password }) {
     localStorage.setItem(
       "user",
       JSON.stringify({
+        id: data.id,
         email: data.email,
         role: data.role,
         name: data.name || email.split("@")[0],
@@ -58,6 +59,7 @@ export async function register({ name, email, password }) {
     localStorage.setItem(
       "user",
       JSON.stringify({
+        id: data.id,
         email: data.email,
         role: data.role,
         name: data.name || email.split("@")[0],

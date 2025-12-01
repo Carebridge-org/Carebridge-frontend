@@ -7,26 +7,7 @@ export default function CreateJournalPage({ addJournal }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    async function fetchUsers() {
-      try {
-        const res = await api.get("/users"); // protected, uses JWT
-        setResidents(res.data);
-      } catch (err) {
-        setError(
-          `Kunne ikke hente beboerliste: ${
-            err.response?.data?.message || err.message
-          }`
-        );
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchUsers();
-  }, []);
 
-  if (loading) return <p>Henter beboerliste...</p>;
-  if (error) return <p className="text-danger">{error}</p>;
 
   return (
     <div className="max-w-2xl mx-auto p-6">
