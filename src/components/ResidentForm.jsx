@@ -114,8 +114,12 @@ export default function ResidentForm({ onSuccess }) {
               onChange={handleChange}
             >
               <option value="">Vælg bruger</option>
-              {users.map((u) => (
-                <option key={u.id} value={u.id}>{u.name}</option>
+              {users
+                .filter((u) => u.role === "CAREWORKER" || u.role === "GUARDIAN")
+                .map((u) => (
+                  <option key={u.id} value={u.id}>
+                    {u.name}
+                  </option>
               ))}
             </Form.Select>
             {errors.userId && <Form.Text className="text-danger">{errors.userId}</Form.Text>}
