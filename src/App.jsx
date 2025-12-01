@@ -97,7 +97,7 @@ export default function App() {
                 Calendar
               </Nav.Link>
 
-              <Nav.Link as={Link} to="/residentOverview">
+              <Nav.Link as={Link} to="/resident-overview">
                 Resident Overview
               </Nav.Link>
 
@@ -172,7 +172,7 @@ export default function App() {
             />
 
             <Route
-              path="/residentOverview"
+              path="/resident-overview"
               element={
                 <PrivateRoute>
                   <ResidentOverview />

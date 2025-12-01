@@ -1,16 +1,23 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Form, Button, Row, Col, Alert, Card } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
-import { createJournalEntry, getUsers } from "../../api/api";
+import { createJournalEntry } from "../../api/api";
 import { validateJournal } from "../../utils/validation";
 
 export default function JournalForm({ initialData, addJournal }) {
   const navigate = useNavigate();
 
-  const [authors, setAuthors] = useState([]);
+  const storedUser = (() => {
+    try {
+      return JSON.parse(localStorage.getItem("user") || "null");
+    } catch {
+      return null;
+    }
+  })();
+
   const [formData, setFormData] = useState(
     initialData || {
-      author: "",
+      author: storedUser?.id || "",      // <‑‑ author = logged‑in user id
       title: "",
       type: "",
       content: "",
@@ -20,53 +27,32 @@ export default function JournalForm({ initialData, addJournal }) {
   const [errors, setErrors] = useState({});
   const [status, setStatus] = useState("idle");
 
-  // Hent authors fra backend
-  useEffect(() => {
-    async function fetchAuthors() {
-      try {
-        const data = await getUsers();
-        setAuthors(data);
-      } catch (err) {
-        console.error("Fejl ved hentning af authors:", err);
-      }
-    }
-    fetchAuthors();
-  }, []);
-
   function handleChange(e) {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   }
 
-    async function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
-    console.log("▶ handleSubmit called with", formData);
     setStatus("loading");
 
     const validationErrors = validateJournal(formData);
-    console.log("▶ validationErrors", validationErrors);
     setErrors(validationErrors);
-
     if (Object.keys(validationErrors).length > 0) {
-      console.log("▶ validation failed, aborting submit");
       setStatus("error");
       return;
     }
 
     try {
       const payload = {
-        journalId: formData.journalId || 2,
         title: formData.title,
         content: formData.content,
         entryType: formData.type,
         riskAssessment: formData.riskAssessment,
-        authorUserId: Number(formData.author),
+        authorUserId: Number(formData.author || storedUser?.id),
       };
 
-      console.log("▶ Sending payload to createJournalEntry", payload);
-
-      const newEntry = await createJournalEntry(formData.journalId || 2, payload);
-      console.log("▶ createJournalEntry response", newEntry);
+      const newEntry = await createJournalEntry(formData.journalId || 1, payload);
 
       if (addJournal) {
         addJournal((prev) => [...prev, newEntry]);
@@ -83,34 +69,37 @@ export default function JournalForm({ initialData, addJournal }) {
   return (
     <Card className="p-4 shadow-sm mx-auto" style={{ maxWidth: "700px" }}>
       <Card.Body>
-        <Card.Title>{initialData ? "Rediger journalindgang" : "Opret journalindgang"}</Card.Title>
+        <Card.Title>
+          {initialData ? "Rediger journalindgang" : "Opret journalindgang"}
+        </Card.Title>
 
         {status === "success" && <Alert variant="success">Journal gemt!</Alert>}
         {status === "error" && <Alert variant="danger">Der opstod en fejl.</Alert>}
 
         <Form onSubmit={handleSubmit}>
+          {/* Titel */}
+          <Form.Group className="mb-3">
+            <Form.Label>Titel</Form.Label>
+            <Form.Control
+              type="text"
+              name="title"
+              value={formData.title}
+              onChange={handleChange}
+            />
+            {errors.title && (
+              <Form.Text className="text-danger">{errors.title}</Form.Text>
+            )}
+          </Form.Group>
 
-        <Form.Group className="mb-3">
-  <Form.Label>Titel</Form.Label>
-  <Form.Control
-    type="text"
-    name="title"
-    value={formData.title}
-    onChange={handleChange}
-  />
-  {errors.title && <Form.Text className="text-danger">{errors.title}</Form.Text>}
-</Form.Group>
-
-          {/* Authors */}
+          {/* Forfatter – vist men ikke redigerbar */}
           <Form.Group className="mb-3">
             <Form.Label>Forfatter</Form.Label>
-            <Form.Select name="author" value={formData.author} onChange={handleChange}>
-              <option value="">Vælg author</option>
-              {authors.map((a) => (
-                <option key={a.id} value={a.id}>{a.name}</option>
-              ))}
-            </Form.Select>
-            {errors.author && <Form.Text className="text-danger">{errors.author}</Form.Text>}
+            <Form.Control
+              type="text"
+              value={storedUser?.name || storedUser?.email || "Ukendt bruger"}
+              disabled
+              readOnly
+            />
           </Form.Group>
 
           {/* Type */}
